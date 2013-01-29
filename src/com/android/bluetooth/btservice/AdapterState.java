@@ -122,6 +122,7 @@ final class AdapterState extends StateMachine {
             switch(msg.what) {
                case USER_TURN_ON:
                    if (DBG) Log.d(TAG,"CURRENT_STATE=OFF, MESSAGE = USER_TURN_ON");
+                   sendCrashToolInfo("ON");
                    notifyAdapterStateChange(BluetoothAdapter.STATE_TURNING_ON);
                    mPendingCommandState.setTurningOn(true);
                    transitionTo(mPendingCommandState);
@@ -130,6 +131,7 @@ final class AdapterState extends StateMachine {
                    break;
                case USER_TURN_OFF:
                    if (DBG) Log.d(TAG,"CURRENT_STATE=OFF, MESSAGE = USER_TURN_OFF");
+                   sendCrashToolInfo("OFF");
                    //TODO: Handle case of service started and stopped without enable
                    break;
                default:
@@ -153,6 +155,7 @@ final class AdapterState extends StateMachine {
             switch(msg.what) {
                case USER_TURN_OFF:
                    if (DBG) Log.d(TAG,"CURRENT_STATE=ON, MESSAGE = USER_TURN_OFF");
+                   sendCrashToolInfo("OFF");
                    notifyAdapterStateChange(BluetoothAdapter.STATE_TURNING_OFF);
                    mPendingCommandState.setTurningOff(true);
                    transitionTo(mPendingCommandState);
@@ -235,7 +238,7 @@ final class AdapterState extends StateMachine {
                     //Enable
                     boolean ret = mAdapterService.enableNative();
                     if (!ret) {
-                        Log.e(TAG, "Error while turning Bluetooth On");
+                        errorLog("Error while turning Bluetooth On");
                         notifyAdapterStateChange(BluetoothAdapter.STATE_OFF);
                         transitionTo(mOffState);
                     } else {
@@ -263,7 +266,7 @@ final class AdapterState extends StateMachine {
                     boolean ret = mAdapterService.disableNative();
                     if (!ret) {
                         removeMessages(DISABLE_TIMEOUT);
-                        Log.e(TAG, "Error while turning Bluetooth Off");
+                        errorLog("Error while turning Bluetooth Off");
                         //FIXME: what about post enable services
                         mPendingCommandState.setTurningOff(false);
                         notifyAdapterStateChange(BluetoothAdapter.STATE_ON);
@@ -345,6 +348,24 @@ final class AdapterState extends StateMachine {
 
     private void errorLog(String msg) {
         Log.e(TAG, msg);
+        sendCrashToolError(msg);
     }
 
+    /* Functions to log crashtool events */
+    private void sendCrashToolInfo(String type) {
+        Intent intent = new Intent("intel.intent.action.phonedoctor.REPORT_INFO");
+        Log.d(TAG, "REPORT_INFO: CWS_BT_" + type);
+        intent.putExtra("intel.intent.extra.phonedoctor.TYPE", "CWS_BT_" + type);
+        mAdapterService.sendBroadcast(intent);
+        return;
+    }
+
+    private void sendCrashToolError(String msg) {
+        Intent intent = new Intent("intel.intent.action.phonedoctor.REPORT_ERROR");
+        Log.d(TAG, "REPORT_ERROR: CWS_BT " + msg);
+        intent.putExtra("intel.intent.extra.phonedoctor.TYPE", "CWS_BT");
+        intent.putExtra("intel.intent.extra.phonedoctor.DATA0", msg);
+        mAdapterService.sendBroadcast(intent);
+        return;
+    }
 }
