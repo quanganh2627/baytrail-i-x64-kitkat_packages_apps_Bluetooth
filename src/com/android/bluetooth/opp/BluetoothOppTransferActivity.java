@@ -372,16 +372,21 @@ public class BluetoothOppTransferActivity extends AlertActivity implements
                             .cancel(mTransInfo.mID);
 
                     // retry the failed transfer
-                    BluetoothOppUtility.retryTransfer(this, mTransInfo);
+                    // first we check if address of remote device is still valid
+                    if (mTransInfo.mDestAddr != null) {
+                        BluetoothOppUtility.retryTransfer(this, mTransInfo);
 
-                    BluetoothDevice remoteDevice = mAdapter.getRemoteDevice(mTransInfo.mDestAddr);
+                        BluetoothDevice remoteDevice = mAdapter.getRemoteDevice(mTransInfo.mDestAddr);
 
-                    // Display toast message
-                    Toast.makeText(
-                            this,
-                            this.getString(R.string.bt_toast_4, BluetoothOppManager.getInstance(
-                                    this).getDeviceName(remoteDevice)), Toast.LENGTH_SHORT)
-                            .show();
+                        // Display toast message
+                        Toast.makeText(
+                                this,
+                                this.getString(R.string.bt_toast_4, BluetoothOppManager.getInstance(
+                                        this).getDeviceName(remoteDevice)), Toast.LENGTH_SHORT)
+                                .show();
+                     } else {
+                         Log.i(TAG, "Remote device's address is null, aborting retry");
+                     }
 
                 } else if (mWhichDialog == DIALOG_SEND_COMPLETE_SUCCESS) {
                     BluetoothOppUtility.updateVisibilityToHidden(this, mUri);
