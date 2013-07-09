@@ -608,7 +608,18 @@ public class BluetoothOppService extends Service {
                 /* check if the file exists */
                 BluetoothOppSendFileInfo sendFileInfo = BluetoothOppUtility.getSendFileInfo(
                         info.mUri);
-                if (sendFileInfo == null || sendFileInfo.mInputStream == null) {
+                if (sendFileInfo == null) {
+                    /* Bluetooth probably turned off, so, the system deleted the SendFileInfo
+                     * in the map.
+                     * So, to avoid an error when resending a file, let's regenerate the file
+                     * info and restore it into the map.
+                     */
+                    BluetoothOppUtility.putSendFileInfo(info.mUri,
+                            BluetoothOppSendFileInfo.generateFileInfo(BluetoothOppService.this,
+                                    info.mUri, info.mMimetype));
+                    sendFileInfo = BluetoothOppUtility.getSendFileInfo(info.mUri);
+                }
+                if (sendFileInfo.mInputStream == null) {
                     Log.e(TAG, "Can't open file for OUTBOUND info " + info.mId);
                     Constants.updateShareStatus(this, info.mId, BluetoothShare.STATUS_BAD_REQUEST);
                     BluetoothOppUtility.closeSendFileInfo(info.mUri);
