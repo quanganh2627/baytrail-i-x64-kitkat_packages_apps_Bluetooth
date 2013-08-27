@@ -211,7 +211,6 @@ public class BluetoothOppTransferActivity extends AlertActivity implements
     private void setUpDialog() {
         // final AlertController.AlertParams p = mAlertParams;
         mPara = mAlertParams;
-        mPara.mIconId = android.R.drawable.ic_dialog_info;
         mPara.mTitle = getString(R.string.download_title);
 
         if ((mWhichDialog == DIALOG_RECEIVE_ONGOING) || (mWhichDialog == DIALOG_SEND_ONGOING)) {
@@ -223,14 +222,14 @@ public class BluetoothOppTransferActivity extends AlertActivity implements
             mPara.mPositiveButtonText = getString(R.string.download_succ_ok);
             mPara.mPositiveButtonListener = this;
         } else if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_FAIL) {
-            mPara.mIconId = android.R.drawable.ic_dialog_alert;
+            mPara.mIconAttrId = android.R.attr.alertDialogIcon;
             mPara.mPositiveButtonText = getString(R.string.download_fail_ok);
             mPara.mPositiveButtonListener = this;
         } else if (mWhichDialog == DIALOG_SEND_COMPLETE_SUCCESS) {
             mPara.mPositiveButtonText = getString(R.string.upload_succ_ok);
             mPara.mPositiveButtonListener = this;
         } else if (mWhichDialog == DIALOG_SEND_COMPLETE_FAIL) {
-            mPara.mIconId = android.R.drawable.ic_dialog_alert;
+            mPara.mIconAttrId = android.R.attr.alertDialogIcon;
             mPara.mPositiveButtonText = getString(R.string.upload_fail_ok);
             mPara.mPositiveButtonListener = this;
             mPara.mNegativeButtonText = getString(R.string.upload_fail_cancel);
@@ -372,16 +371,21 @@ public class BluetoothOppTransferActivity extends AlertActivity implements
                             .cancel(mTransInfo.mID);
 
                     // retry the failed transfer
-                    BluetoothOppUtility.retryTransfer(this, mTransInfo);
+                    // first we check if address of remote device is still valid
+                    if (mTransInfo.mDestAddr != null) {
+                        BluetoothOppUtility.retryTransfer(this, mTransInfo);
 
-                    BluetoothDevice remoteDevice = mAdapter.getRemoteDevice(mTransInfo.mDestAddr);
+                        BluetoothDevice remoteDevice = mAdapter.getRemoteDevice(mTransInfo.mDestAddr);
 
-                    // Display toast message
-                    Toast.makeText(
-                            this,
-                            this.getString(R.string.bt_toast_4, BluetoothOppManager.getInstance(
-                                    this).getDeviceName(remoteDevice)), Toast.LENGTH_SHORT)
-                            .show();
+                        // Display toast message
+                        Toast.makeText(
+                                this,
+                                this.getString(R.string.bt_toast_4, BluetoothOppManager.getInstance(
+                                        this).getDeviceName(remoteDevice)), Toast.LENGTH_SHORT)
+                                .show();
+                     } else {
+                         Log.i(TAG, "Remote device's address is null, aborting retry");
+                     }
 
                 } else if (mWhichDialog == DIALOG_SEND_COMPLETE_SUCCESS) {
                     BluetoothOppUtility.updateVisibilityToHidden(this, mUri);
@@ -458,7 +462,7 @@ public class BluetoothOppTransferActivity extends AlertActivity implements
             mAlert.getButton(DialogInterface.BUTTON_POSITIVE).setText(
                     getString(R.string.download_succ_ok));
         } else if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_FAIL) {
-            mAlert.setIcon(android.R.drawable.ic_dialog_alert);
+            mAlert.setIcon(mAlert.getIconAttributeResId(android.R.attr.alertDialogIcon));
             mAlert.getButton(DialogInterface.BUTTON_NEGATIVE).setVisibility(View.GONE);
             mAlert.getButton(DialogInterface.BUTTON_POSITIVE).setText(
                     getString(R.string.download_fail_ok));
@@ -467,7 +471,7 @@ public class BluetoothOppTransferActivity extends AlertActivity implements
             mAlert.getButton(DialogInterface.BUTTON_POSITIVE).setText(
                     getString(R.string.upload_succ_ok));
         } else if (mWhichDialog == DIALOG_SEND_COMPLETE_FAIL) {
-            mAlert.setIcon(android.R.drawable.ic_dialog_alert);
+            mAlert.setIcon(mAlert.getIconAttributeResId(android.R.attr.alertDialogIcon));
             mAlert.getButton(DialogInterface.BUTTON_POSITIVE).setText(
                     getString(R.string.upload_fail_ok));
             mAlert.getButton(DialogInterface.BUTTON_NEGATIVE).setText(
