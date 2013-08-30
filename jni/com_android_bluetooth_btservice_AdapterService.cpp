@@ -904,6 +904,38 @@ Fail:
     return -1;
 }
 
+static jboolean setChannelClassificationNative(JNIEnv *env, jobject object, jbyteArray btChannel, jbyteArray leChannel)
+{
+    jbyte *btChn = NULL;
+    jbyte *leChn = NULL;
+    jboolean result = JNI_FALSE;
+
+    ALOGV("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterface) return result;
+
+    btChn = env->GetByteArrayElements(btChannel, NULL);
+    if (btChn == NULL) {
+        jniThrowIOException(env, EINVAL);
+        return result;
+    }
+
+    leChn = env->GetByteArrayElements(leChannel, NULL);
+    if (leChn == NULL) {
+        env->ReleaseByteArrayElements(btChannel, btChn, NULL);
+        jniThrowIOException(env, EINVAL);
+        return result;
+    }
+
+    int ret = sBluetoothInterface->set_channel_classification((uint8_t *) btChn, (uint8_t *)leChn);
+    env->ReleaseByteArrayElements(btChannel, btChn, NULL);
+    env->ReleaseByteArrayElements(leChannel, leChn, NULL);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
 static JNINativeMethod sMethods[] = {
     /* name, signature, funcPtr */
     {"classInitNative", "()V", (void *) classInitNative},
@@ -926,7 +958,8 @@ static JNINativeMethod sMethods[] = {
     {"getRemoteServicesNative", "([B)Z", (void*) getRemoteServicesNative},
     {"connectSocketNative", "([BI[BII)I", (void*) connectSocketNative},
     {"createSocketChannelNative", "(ILjava/lang/String;[BII)I",
-     (void*) createSocketChannelNative}
+     (void*) createSocketChannelNative},
+    {"setChannelClassificationNative", "([B[B)Z", (void*) setChannelClassificationNative}
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)
