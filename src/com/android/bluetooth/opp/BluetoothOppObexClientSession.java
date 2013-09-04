@@ -308,7 +308,8 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
         private BluetoothOppSendFileInfo processShareInfo() {
             if (V) Log.v(TAG, "Client thread processShareInfo() " + mInfo.mId);
 
-            BluetoothOppSendFileInfo fileInfo = BluetoothOppUtility.getSendFileInfo(mInfo.mUri);
+            BluetoothOppSendFileInfo fileInfo = BluetoothOppUtility.getSendFileInfo(
+                    mInfo.mUri, mInfo.mId);
             if (fileInfo.mFileName == null || fileInfo.mLength == 0) {
                 if (V) Log.v(TAG, "BluetoothOppSendFileInfo get invalid file");
                     Constants.updateShareStatus(mContext1, mInfo.mId, fileInfo.mStatus);
@@ -503,7 +504,7 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
             } finally {
                 try {
                     // Close InputStream and remove SendFileInfo from map
-                    BluetoothOppUtility.closeSendFileInfo(mInfo.mUri);
+                    BluetoothOppUtility.closeSendFileInfo(mInfo.mUri, mInfo.mId);
                     if (!error) {
                         responseCode = putOperation.getResponseCode();
                         if (responseCode != -1) {
