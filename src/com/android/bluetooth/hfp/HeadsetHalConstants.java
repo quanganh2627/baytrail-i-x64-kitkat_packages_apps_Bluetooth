@@ -64,4 +64,8 @@ final public class HeadsetHalConstants {
     final static int CALL_STATE_INCOMING = 4;
     final static int CALL_STATE_WAITING = 5;
     final static int CALL_STATE_IDLE = 6;
+
+    // match up with bthf_wbs_config_t of bt_hf.h
+    final static int WBS_CONFIG_ON = 0;
+    final static int WBS_CONFIG_OFF = 1;
 }

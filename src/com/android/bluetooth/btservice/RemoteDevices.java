@@ -403,8 +403,13 @@ final class RemoteDevices {
         BluetoothDevice device = getDevice(address);
 
         if (device == null) {
-            errorLog("aclStateChangeCallback: Device is NULL");
-            return;
+            /* This can occur if we connect 'blindly' to a device with a known
+             * BD_ADDR, without having seen it in an inquiry first
+             * (the device can be connectable and non-discoverable, or it may
+             * have been switched on after the inquiry has completed).
+             */
+            addDeviceProperties(address); //Add the device to the map
+            device = getDevice(address);
         }
 
         Intent intent = null;
