@@ -73,7 +73,6 @@ final class HeadsetStateMachine extends StateMachine {
 
     private static final String HEADSET_NAME = "bt_headset_name";
     private static final String HEADSET_NREC = "bt_headset_nrec";
-    private static final String HEADSET_WBS = "bt_headset_wbs";
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
@@ -734,10 +733,6 @@ final class HeadsetStateMachine extends StateMachine {
                         case EVENT_TYPE_KEY_PRESSED:
                             processKeyPressed();
                             break;
-                        case EVENT_TYPE_WBS:
-                            Log.d(TAG, "Processing WBS state from Connected state");
-                            processWBS(event.valueInt);
-                            break;
                         default:
                             Log.e(TAG, "Unknown stack event: " + event.type);
                             break;
@@ -954,10 +949,6 @@ final class HeadsetStateMachine extends StateMachine {
                             break;
                         case EVENT_TYPE_KEY_PRESSED:
                             processKeyPressed();
-                            break;
-                        case EVENT_TYPE_WBS:
-                            Log.d(TAG, "Processing WBS state from AudioOn state");
-                            processWBS(event.valueInt);
                             break;
                         default:
                             Log.e(TAG, "Unknown stack event: " + event.type);
@@ -1797,17 +1788,6 @@ final class HeadsetStateMachine extends StateMachine {
         }
     }
 
-    private void processWBS(int state) {
-        switch (state) {
-            case HeadsetHalConstants.WBS_CONFIG_ON:
-                mAudioManager.setParameters(HEADSET_WBS + "=on");
-                break;
-            case HeadsetHalConstants.WBS_CONFIG_OFF:
-                mAudioManager.setParameters(HEADSET_WBS + "=off");
-                break;
-        }
-    }
-
     private void onConnectionStateChanged(int state, byte[] address) {
         StackEvent event = new StackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt = state;
@@ -1897,12 +1877,6 @@ final class HeadsetStateMachine extends StateMachine {
 
     private void onKeyPressed() {
         StackEvent event = new StackEvent(EVENT_TYPE_KEY_PRESSED);
-        sendMessage(STACK_EVENT, event);
-    }
-
-    private void onWBSChanged(int state) {
-        StackEvent event = new StackEvent(EVENT_TYPE_WBS);
-        event.valueInt = state;
         sendMessage(STACK_EVENT, event);
     }
 
@@ -2047,7 +2021,6 @@ final class HeadsetStateMachine extends StateMachine {
     final private static int EVENT_TYPE_AT_CLCC = 14;
     final private static int EVENT_TYPE_UNKNOWN_AT = 15;
     final private static int EVENT_TYPE_KEY_PRESSED = 16;
-    final private static int EVENT_TYPE_WBS = 17;
 
     private class StackEvent {
         int type = EVENT_TYPE_NONE;
