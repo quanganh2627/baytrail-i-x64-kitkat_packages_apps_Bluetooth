@@ -919,6 +919,42 @@ public class AdapterService extends Service {
             return service.setChannelClassification(BTChannelClassification, LEChannelMap);
         }
 
+        public boolean setMWSChannelParameters(int enable,
+                                               int rxCenterFreq,
+                                               int txCenterFreq,
+                                               int rxChannelBandwidth,
+                                               int txChannelBandwidth,
+                                               int channelType) {
+             if (!Utils.checkCaller()) {
+                 Log.w(TAG,"setMWSChannelParameters(): not allowed for non-active user");
+                 return false;
+             }
+
+             AdapterService service = getService();
+             if (service == null) return false;
+             return service.setMWSChannelParameters(enable,
+                                                    rxCenterFreq,
+                                                    txCenterFreq,
+                                                    rxChannelBandwidth,
+                                                    txChannelBandwidth,
+                                                    channelType);
+        }
+
+        public boolean setMWSTransportLayer(int transportLayer,
+                                            int toBaudRate,
+                                            int fromBaudRate) {
+             if (!Utils.checkCaller()) {
+                 Log.w(TAG,"setMWSTransportLayer(): not allowed for non-active user");
+                 return false;
+             }
+
+             AdapterService service = getService();
+             if (service == null) return false;
+             return service.setMWSTransportLayer(transportLayer,
+                                                 toBaudRate,
+                                                 fromBaudRate);
+        }
+
         public void registerCallback(IBluetoothCallback cb) {
             AdapterService service = getService();
             if (service == null) return ;
@@ -1385,6 +1421,32 @@ public class AdapterService extends Service {
         return setChannelClassificationNative(BTChannelClassification, LEChannelMap);
     }
 
+     boolean setMWSChannelParameters(int enable,
+                                     int rxCenterFreq,
+                                     int txCenterFreq,
+                                     int rxChannelBandwidth,
+                                     int txChannelBandwidth,
+                                     int channelType)
+     {
+          enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+          return setMWSChannelParametersNative(enable,
+                                               rxCenterFreq,
+                                               txCenterFreq,
+                                               rxChannelBandwidth,
+                                               txChannelBandwidth,
+                                               channelType);
+     }
+
+     boolean setMWSTransportLayer(int transportLayer,
+                                  int toBaudRate,
+                                  int fromBaudRate)
+     {
+        enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+        return setMWSTransportLayerNative(transportLayer,
+                                          toBaudRate,
+                                          fromBaudRate);
+     }
+
      void registerCallback(IBluetoothCallback cb) {
          mCallbacks.register(cb);
       }
@@ -1453,6 +1515,16 @@ public class AdapterService extends Service {
 
     private native boolean setChannelClassificationNative(byte[] BTChannelClassification,
                                                           byte[] LEChannelMap);
+
+    private native boolean setMWSChannelParametersNative(int enable,
+                                                         int rxCenterFreq,
+                                                         int txCenterFreq,
+                                                         int rxChannelBandwidth,
+                                                         int txChannelBandwidth,
+                                                         int channelType);
+    private native boolean setMWSTransportLayerNative(int transportLayer,
+                                                      int toBaudRate,
+                                                      int fromBaudRate);
 
     /*package*/ native boolean getRemoteServicesNative(byte[] address);
 

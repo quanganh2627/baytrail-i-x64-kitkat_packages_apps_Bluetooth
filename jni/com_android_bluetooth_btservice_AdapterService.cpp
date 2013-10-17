@@ -48,6 +48,7 @@ static jmethodID method_aclStateChangeCallback;
 static jmethodID method_discoveryStateChangeCallback;
 
 static const bt_interface_t *sBluetoothInterface = NULL;
+static const bt_interface_intel_t *sBluetoothInterfaceIntel = NULL;
 static const btsock_interface_t *sBluetoothSocketInterface = NULL;
 static JNIEnv *callbackEnv = NULL;
 
@@ -57,6 +58,10 @@ static jfieldID sJniCallbacksField;
 
 const bt_interface_t* getBluetoothInterface() {
     return sBluetoothInterface;
+}
+
+const bt_interface_intel_t* getBluetoothInterfaceIntel() {
+    return sBluetoothInterfaceIntel;
 }
 
 JNIEnv* getCallbackEnv() {
@@ -505,6 +510,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
         if (err == 0) {
             bluetooth_module_t* btStack = (bluetooth_module_t *)abstraction;
             sBluetoothInterface = btStack->get_bluetooth_interface();
+            sBluetoothInterfaceIntel = btStack->get_bluetooth_interface_intel();
         } else {
            ALOGE("Error while opening Bluetooth library");
         }
@@ -987,9 +993,59 @@ static jboolean setChannelClassificationNative(JNIEnv *env, jobject object, jbyt
         return result;
     }
 
-    int ret = sBluetoothInterface->set_channel_classification((uint8_t *) btChn, (uint8_t *)leChn);
+    if (!sBluetoothInterfaceIntel) return result;
+
+    int ret = sBluetoothInterfaceIntel->set_channel_classification((uint8_t *) btChn, (uint8_t *)leChn);
     env->ReleaseByteArrayElements(btChannel, btChn, NULL);
     env->ReleaseByteArrayElements(leChannel, leChn, NULL);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
+static jboolean setMWSChannelParametersNative(JNIEnv *env,
+                                              jobject object,
+                                              jbyte enable,
+                                              jchar rx_center_freq,
+                                              jchar tx_center_freq,
+                                              jchar rx_channel_bandwidth,
+                                              jchar tx_channel_bandwidth,
+                                              jchar channel_type)
+{
+    jboolean result = JNI_FALSE;
+
+    ALOGV("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterfaceIntel) return result;
+
+    int ret = sBluetoothInterfaceIntel->set_mws_channel_parameters((uint8_t) enable,
+                                                              (uint16_t)rx_center_freq,
+                                                              (uint16_t)tx_center_freq,
+                                                              (uint16_t)rx_channel_bandwidth,
+                                                              (uint16_t)tx_channel_bandwidth,
+                                                              (uint16_t)channel_type);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
+static jboolean setMWSTransportLayerNative(JNIEnv *env,
+                                           jobject object,
+                                           jbyte transport_layer,
+                                           jint to_baud_rate,
+                                           jint from_baud_rate)
+{
+    jboolean result = JNI_FALSE;
+
+    ALOGV("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterfaceIntel) return result;
+
+    int ret = sBluetoothInterfaceIntel->set_mws_transport_layer((uint8_t)transport_layer,
+                                                           (uint32_t)to_baud_rate,
+                                                           (uint32_t)from_baud_rate);
 
     result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 
@@ -1020,11 +1076,15 @@ static JNINativeMethod sMethods[] = {
     {"createSocketChannelNative", "(ILjava/lang/String;[BII)I",
      (void*) createSocketChannelNative},
     {"configHciSnoopLogNative", "(Z)Z", (void*) configHciSnoopLogNative},
-    {"setChannelClassificationNative", "([B[B)Z", (void*) setChannelClassificationNative},
+    {"setChannelClassificationNative", "([B[B)Z",
+     (void*) setChannelClassificationNative},
     // INTEL_FEATURE_ASF
     {"notifyBluetoothAccessNative", "(ILjava/lang/String;)Z",
      (void*) notifyBluetoothAccessNative},
     // INTEL_FEATURE_ASF_END
+    {"setMWSChannelParametersNative", "(IIIIII)Z",
+     (void*) setMWSChannelParametersNative},
+    {"setMWSTransportLayerNative", "(III)Z", (void*) setMWSTransportLayerNative}
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)
