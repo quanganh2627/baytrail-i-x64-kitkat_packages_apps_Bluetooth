@@ -93,6 +93,27 @@ public class AdapterService extends Service {
     }
 
     private static AdapterService sAdapterService;
+    // INTEL_FEATURE_ASF
+    /**
+     * This callback is called by all the Bluetooth hook points in ASF 2.0
+     * @param direction : This specifies whether the bluetooth access is Input/Output
+     * @param mimeType : mimeType of the file transfered
+     * @return response from the ASF Client Allow/Deny
+     */
+    public boolean bluetoothAccessEventCallback(int direction, String mimeType) {
+        if (mimeType == null) {
+            Log.e(TAG, "mimeType is null");
+            // Event not populated properly.Hence allowing bluetooth to take default action.
+            return true;
+        }
+        if (DBG) {
+            Log.d(TAG, "in bluetoothAccessEventCallback "+direction + mimeType);
+        }
+        boolean result = notifyBluetoothAccessNative(direction, mimeType);
+        return result;
+    }
+    // INTEL_FEATURE_ASF END
+
     public static synchronized AdapterService getAdapterService(){
         if (sAdapterService != null && !sAdapterService.mCleaningUp) {
             if (DBG) Log.d(TAG, "getAdapterService(): returning " + sAdapterService);
@@ -1440,6 +1461,9 @@ public class AdapterService extends Service {
                                            byte[] uuid, int port, int flag);
     private native int createSocketChannelNative(int type, String serviceName,
                                                  byte[] uuid, int port, int flag);
+    // INTEL_FEATURE_ASF
+    private native boolean notifyBluetoothAccessNative(int direction, String fileName);
+    // INTEL_FEATURE_ASF_END
 
     /*package*/ native boolean configHciSnoopLogNative(boolean enable);
 
