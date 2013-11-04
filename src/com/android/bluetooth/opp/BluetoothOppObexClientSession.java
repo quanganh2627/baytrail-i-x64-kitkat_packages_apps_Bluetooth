@@ -48,6 +48,9 @@ import android.os.PowerManager.WakeLock;
 import android.os.Process;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
+import com.intel.asf.AsfAosp;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -370,6 +373,36 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                 }
                 synchronized (this) {
                     mWaitingForRemote = false;
+                }
+                if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+                    if (D) {
+                        Log.d(
+                                TAG,
+                                "calling bluetoothAccessEventCallback with "+
+                                mInfo.mDirection+ fileInfo.mMimetype
+                        );
+                    }
+                    AdapterService Obj = AdapterService.getAdapterService();
+                    if (Obj != null ) {
+                        // Place call to function that acts as a hook point for OPP bluetooth events
+                        boolean result = Obj.bluetoothAccessEventCallback(mInfo.mDirection,
+                                fileInfo.mMimetype);
+                        if (D) {
+                            Log.d(
+                                    TAG,
+                                    "bluetoothAccessEventCallback returned "+ result
+                            );
+                        }
+
+                        // If result is false, deny access to requested application and return NULL.
+                        // If result is true, either ASF allowed access to Opp profile or if
+                        // ASF Client is not running
+
+                        if (!result) {
+                            Log.e(TAG, "result is 0, returning");
+                            error = true;
+                        }
+                    }
                 }
 
                 if (!error) {

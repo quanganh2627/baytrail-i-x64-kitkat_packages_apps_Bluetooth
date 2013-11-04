@@ -53,6 +53,7 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.intel.asf.AsfAosp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -558,8 +559,31 @@ final class A2dpStateMachine extends StateMachine {
                                                            mCurrentDevice);
                 return;
             }
+
             switch (state) {
                 case AUDIO_STATE_STARTED:
+                    if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+                        boolean asfResult = true;
+                        logd("Inside the processAudioStateEvent AUDIO_STATE_STARTED call");
+                        int direction = 1;
+                        String profileName = "A2DP";
+                        AdapterService Obj = AdapterService.getAdapterService();
+                        if (Obj != null) {
+                            // Place call to function that acts as a hook point for
+                            // A2dp profile events
+                            asfResult = Obj.bluetoothAccessEventCallback(direction, profileName);
+                            logd("bluetoothAccessEventCallback returned "+ asfResult);
+
+                            // If result is false, deny access to requested application and return
+                            // NULL. If result is true, either ASF allowed access to A2dp events
+                            // or if ASF Client is not running
+                            if (!asfResult) {
+                                logd("ASF client app denied hence calling clean up");
+                                disconnectA2dpNative(getByteAddress(mCurrentDevice));
+                                break;
+                            }
+                        }
+                    }
                     if (mPlayingA2dpDevice == null) {
                         mPlayingA2dpDevice = device;
                         mService.setAvrcpAudioState(BluetoothA2dp.STATE_PLAYING);
