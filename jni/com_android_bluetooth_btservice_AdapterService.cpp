@@ -21,6 +21,7 @@
 #include "utils/misc.h"
 #include "cutils/properties.h"
 #include "android_runtime/AndroidRuntime.h"
+#include "android_runtime/Log.h"
 
 #include <string.h>
 #include <pthread.h>
@@ -882,7 +883,7 @@ static int createSocketChannelNative(JNIEnv *env, jobject object, jint type,
         ALOGE("failed to get uuid");
         goto Fail;
     }
-    ALOGE("SOCK FLAG = %x ***********************",flag);
+    ALOGI("SOCK FLAG = %x ***********************",flag);
     if ( (status = sBluetoothSocketInterface->listen((btsock_type_t) type, service_name,
                        (const uint8_t*) uuid, channel, &socket_fd, flag)) != BT_STATUS_SUCCESS) {
         ALOGE("Socket listen failed: %d", status);
@@ -902,6 +903,20 @@ Fail:
     if (uuid) env->ReleaseByteArrayElements(uuidObj, uuid, 0);
 
     return -1;
+}
+
+static jboolean configHciSnoopLogNative(JNIEnv* env, jobject obj, jboolean enable) {
+    ALOGV("%s:",__FUNCTION__);
+
+    jboolean result = JNI_FALSE;
+
+    if (!sBluetoothInterface) return result;
+
+    int ret = sBluetoothInterface->config_hci_snoop_log(enable);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
 }
 
 static JNINativeMethod sMethods[] = {
@@ -926,7 +941,8 @@ static JNINativeMethod sMethods[] = {
     {"getRemoteServicesNative", "([B)Z", (void*) getRemoteServicesNative},
     {"connectSocketNative", "([BI[BII)I", (void*) connectSocketNative},
     {"createSocketChannelNative", "(ILjava/lang/String;[BII)I",
-     (void*) createSocketChannelNative}
+     (void*) createSocketChannelNative},
+    {"configHciSnoopLogNative", "(Z)Z", (void*) configHciSnoopLogNative}
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)

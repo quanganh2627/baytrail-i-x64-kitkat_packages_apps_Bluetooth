@@ -58,7 +58,9 @@ public class A2dpService extends ProfileService {
     }
 
     protected boolean stop() {
-        mStateMachine.doQuit();
+        if (mStateMachine != null) {
+            mStateMachine.doQuit();
+        }
         mAvrcp.doQuit();
         return true;
     }
@@ -176,6 +178,19 @@ public class A2dpService extends ProfileService {
         return priority;
     }
 
+    /* Absolute volume implementation */
+    public boolean isAvrcpAbsoluteVolumeSupported() {
+        return mAvrcp.isAbsoluteVolumeSupported();
+    }
+
+    public void adjustAvrcpAbsoluteVolume(int direction) {
+        mAvrcp.adjustVolume(direction);
+    }
+
+    public void setAvrcpAbsoluteVolume(int volume) {
+        mAvrcp.setAbsoluteVolume(volume);
+    }
+
     synchronized boolean isA2dpPlaying(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PERM,
                                        "Need BLUETOOTH permission");
@@ -249,6 +264,24 @@ public class A2dpService extends ProfileService {
             A2dpService service = getService();
             if (service == null) return BluetoothProfile.PRIORITY_UNDEFINED;
             return service.getPriority(device);
+        }
+
+        public boolean isAvrcpAbsoluteVolumeSupported() {
+            A2dpService service = getService();
+            if (service == null) return false;
+            return service.isAvrcpAbsoluteVolumeSupported();
+        }
+
+        public void adjustAvrcpAbsoluteVolume(int direction) {
+            A2dpService service = getService();
+            if (service == null) return;
+            service.adjustAvrcpAbsoluteVolume(direction);
+        }
+
+        public void setAvrcpAbsoluteVolume(int volume) {
+            A2dpService service = getService();
+            if (service == null) return;
+            service.setAvrcpAbsoluteVolume(volume);
         }
 
         public boolean isA2dpPlaying(BluetoothDevice device) {

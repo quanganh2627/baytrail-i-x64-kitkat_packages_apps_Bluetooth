@@ -196,6 +196,7 @@ public class GattService extends ProfileService {
 
         public void binderDied() {
             if (DBG) Log.d(TAG, "Binder is dead - unregistering client (" + mAppIf + ")!");
+            stopScan(mAppIf, false);
             unregisterClient(mAppIf);
         }
     }
@@ -286,6 +287,12 @@ public class GattService extends ProfileService {
             service.clientDisconnect(clientIf, address);
         }
 
+        public void clientListen(int clientIf, boolean start) {
+            GattService service = getService();
+            if (service == null) return;
+            service.clientListen(clientIf, start);
+        }
+
         public void refreshDevice(int clientIf, String address) {
             GattService service = getService();
             if (service == null) return;
@@ -324,26 +331,29 @@ public class GattService extends ProfileService {
         public void readDescriptor(int clientIf, String address, int srvcType,
                             int srvcInstanceId, ParcelUuid srvcId,
                             int charInstanceId, ParcelUuid charId,
-                            ParcelUuid descrId, int authReq) {
+                            int descrInstanceId, ParcelUuid descrId,
+                            int authReq) {
             GattService service = getService();
             if (service == null) return;
-            service.readDescriptor(clientIf, address, srvcType, srvcInstanceId,
-                                       srvcId.getUuid(), charInstanceId,
-                                       charId.getUuid(), descrId.getUuid(),
-                                       authReq);
+            service.readDescriptor(clientIf, address, srvcType,
+                                   srvcInstanceId, srvcId.getUuid(),
+                                   charInstanceId, charId.getUuid(),
+                                   descrInstanceId, descrId.getUuid(),
+                                   authReq);
         }
 
         public void writeDescriptor(int clientIf, String address, int srvcType,
                             int srvcInstanceId, ParcelUuid srvcId,
                             int charInstanceId, ParcelUuid charId,
-                            ParcelUuid descrId, int writeType,
-                            int authReq, byte[] value) {
+                            int descrInstanceId, ParcelUuid descrId,
+                            int writeType, int authReq, byte[] value) {
             GattService service = getService();
             if (service == null) return;
-            service.writeDescriptor(clientIf, address, srvcType, srvcInstanceId,
-                                       srvcId.getUuid(), charInstanceId,
-                                       charId.getUuid(), descrId.getUuid(),
-                                       writeType, authReq, value);
+            service.writeDescriptor(clientIf, address, srvcType,
+                                    srvcInstanceId, srvcId.getUuid(),
+                                    charInstanceId, charId.getUuid(),
+                                    descrInstanceId, descrId.getUuid(),
+                                    writeType, authReq, value);
         }
 
         public void beginReliableWrite(int clientIf, String address) {
@@ -468,6 +478,14 @@ public class GattService extends ProfileService {
                 srvcId.getUuid(), charInstanceId, charId.getUuid(), confirm, value);
         }
 
+        public void setAdvData(int serverIf, boolean setScanRsp, boolean inclName,
+                                boolean inclTxPower, int minInterval, int maxInterval,
+                                int appearance, byte[] manufacturerData) {
+            GattService service = getService();
+            if (service == null) return;
+            service.setAdvData(serverIf, setScanRsp, inclName, inclTxPower,
+                minInterval, maxInterval, appearance, manufacturerData);
+        }
     };
 
     /**************************************************************************
@@ -619,7 +637,7 @@ public class GattService extends ProfileService {
     void onGetDescriptor(int connId, int status, int srvcType,
             int srvcInstId, long srvcUuidLsb, long srvcUuidMsb,
             int charInstId, long charUuidLsb, long charUuidMsb,
-            long descrUuidLsb, long descrUuidMsb) throws RemoteException {
+            int descrInstId, long descrUuidLsb, long descrUuidMsb) throws RemoteException {
 
         UUID srvcUuid = new UUID(srvcUuidMsb, srvcUuidLsb);
         UUID charUuid = new UUID(charUuidMsb, charUuidLsb);
@@ -635,14 +653,14 @@ public class GattService extends ProfileService {
                 app.callback.onGetDescriptor(address, srvcType,
                             srvcInstId, new ParcelUuid(srvcUuid),
                             charInstId, new ParcelUuid(charUuid),
-                            new ParcelUuid(descUuid));
+                            descrInstId, new ParcelUuid(descUuid));
             }
 
             // Get next descriptor for the current characteristic
             gattClientGetDescriptorNative(connId, srvcType,
                                     srvcInstId, srvcUuidLsb, srvcUuidMsb,
                                     charInstId, charUuidLsb, charUuidMsb,
-                                    descrUuidLsb, descrUuidMsb);
+                                    descrInstId, descrUuidLsb, descrUuidMsb);
         } else {
             // Explore the next service
             continueSearch(connId, 0);
@@ -764,7 +782,7 @@ public class GattService extends ProfileService {
     void onReadDescriptor(int connId, int status, int srvcType,
             int srvcInstId, long srvcUuidLsb, long srvcUuidMsb,
             int charInstId, long charUuidLsb, long charUuidMsb,
-            long descrUuidLsb, long descrUuidMsb,
+            int descrInstId, long descrUuidLsb, long descrUuidMsb,
             int charType, byte[] data) throws RemoteException {
 
         UUID srvcUuid = new UUID(srvcUuidMsb, srvcUuidLsb);
@@ -780,14 +798,14 @@ public class GattService extends ProfileService {
             app.callback.onDescriptorRead(address, status, srvcType,
                         srvcInstId, new ParcelUuid(srvcUuid),
                         charInstId, new ParcelUuid(charUuid),
-                        new ParcelUuid(descrUuid), data);
+                        descrInstId, new ParcelUuid(descrUuid), data);
         }
     }
 
     void onWriteDescriptor(int connId, int status, int srvcType,
             int srvcInstId, long srvcUuidLsb, long srvcUuidMsb,
             int charInstId, long charUuidLsb, long charUuidMsb,
-            long descrUuidLsb, long descrUuidMsb) throws RemoteException {
+            int descrInstId, long descrUuidLsb, long descrUuidMsb) throws RemoteException {
 
         UUID srvcUuid = new UUID(srvcUuidMsb, srvcUuidLsb);
         UUID charUuid = new UUID(charUuidMsb, charUuidLsb);
@@ -802,7 +820,7 @@ public class GattService extends ProfileService {
             app.callback.onDescriptorWrite(address, status, srvcType,
                         srvcInstId, new ParcelUuid(srvcUuid),
                         charInstId, new ParcelUuid(charUuid),
-                        new ParcelUuid(descrUuid));
+                        descrInstId, new ParcelUuid(descrUuid));
         }
     }
 
@@ -815,6 +833,16 @@ public class GattService extends ProfileService {
         if (app != null) {
             app.callback.onReadRemoteRssi(address, rssi, status);
         }
+    }
+
+    void onClientListen(int status, int clientIf)
+            throws RemoteException {
+        if (DBG) Log.d(TAG, "onClientListen() status=" + status);
+
+        ClientMap.App app = mClientMap.getById(clientIf);
+        if (app == null) return;
+
+        app.callback.onListen(status);
     }
 
     /**************************************************************************
@@ -921,7 +949,6 @@ public class GattService extends ProfileService {
         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
 
         if (DBG) Log.d(TAG, "unregisterClient() - clientIf=" + clientIf);
-        removeScanClient(clientIf, false);
         mClientMap.remove(clientIf);
         gattClientUnregisterAppNative(clientIf);
     }
@@ -940,6 +967,11 @@ public class GattService extends ProfileService {
         if (DBG) Log.d(TAG, "clientDisconnect() - address=" + address + ", connId=" + connId);
 
         gattClientDisconnectNative(clientIf, address, connId != null ? connId : 0);
+    }
+
+    void clientListen(int clientIf, boolean start) {
+        if (DBG) Log.d(TAG, "clientListen() - start=" + start);
+        gattClientListenNative(clientIf, start);
     }
 
     List<String> getConnectedDevices() {
@@ -1013,7 +1045,8 @@ public class GattService extends ProfileService {
     void readDescriptor(int clientIf, String address, int srvcType,
                             int srvcInstanceId, UUID srvcUuid,
                             int charInstanceId, UUID charUuid,
-                            UUID descrUuid, int authReq) {
+                            int descrInstanceId, UUID descrUuid,
+                            int authReq) {
         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
 
         if (DBG) Log.d(TAG, "readDescriptor() - address=" + address);
@@ -1021,9 +1054,11 @@ public class GattService extends ProfileService {
         Integer connId = mClientMap.connIdByAddress(clientIf, address);
         if (connId != null)
             gattClientReadDescriptorNative(connId, srvcType,
-                srvcInstanceId, srvcUuid.getLeastSignificantBits(),
-                srvcUuid.getMostSignificantBits(), charInstanceId,
+                srvcInstanceId,
+                srvcUuid.getLeastSignificantBits(), srvcUuid.getMostSignificantBits(),
+                charInstanceId,
                 charUuid.getLeastSignificantBits(), charUuid.getMostSignificantBits(),
+                descrInstanceId,
                 descrUuid.getLeastSignificantBits(), descrUuid.getMostSignificantBits(),
                 authReq);
         else
@@ -1033,8 +1068,8 @@ public class GattService extends ProfileService {
     void writeDescriptor(int clientIf, String address, int srvcType,
                             int srvcInstanceId, UUID srvcUuid,
                             int charInstanceId, UUID charUuid,
-                            UUID descrUuid, int writeType,
-                            int authReq, byte[] value) {
+                            int descrInstanceId, UUID descrUuid,
+                            int writeType, int authReq, byte[] value) {
         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
 
         if (DBG) Log.d(TAG, "writeDescriptor() - address=" + address);
@@ -1042,9 +1077,11 @@ public class GattService extends ProfileService {
         Integer connId = mClientMap.connIdByAddress(clientIf, address);
         if (connId != null)
             gattClientWriteDescriptorNative(connId, srvcType,
-                srvcInstanceId, srvcUuid.getLeastSignificantBits(),
-                srvcUuid.getMostSignificantBits(), charInstanceId,
+                srvcInstanceId,
+                srvcUuid.getLeastSignificantBits(), srvcUuid.getMostSignificantBits(),
+                charInstanceId,
                 charUuid.getLeastSignificantBits(), charUuid.getMostSignificantBits(),
+                descrInstanceId,
                 descrUuid.getLeastSignificantBits(), descrUuid.getMostSignificantBits(),
                 writeType, authReq, value);
         else
@@ -1094,6 +1131,15 @@ public class GattService extends ProfileService {
 
         if (DBG) Log.d(TAG, "readRemoteRssi() - address=" + address);
         gattClientReadRemoteRssiNative(clientIf, address);
+    }
+
+    void setAdvData(int serverIf, boolean setScanRsp, boolean inclName,
+                boolean inclTxPower, int minInterval, int maxInterval,
+                int appearance, byte[] manufacturerData) {
+        if (DBG) Log.d(TAG, "setAdvData() - setScanRsp=" + setScanRsp);
+        if (minInterval == 0) maxInterval = 0;
+        gattSetAdvDataNative(serverIf, setScanRsp, inclName, inclTxPower,
+            minInterval, maxInterval, appearance, manufacturerData);
     }
 
     /**************************************************************************
@@ -1477,7 +1523,7 @@ public class GattService extends ProfileService {
                 // Descriptor is up next
                 gattClientGetDescriptorNative(svc.connId, svc.srvcType,
                     svc.srvcInstId, svc.srvcUuidLsb, svc.srvcUuidMsb,
-                    svc.charInstId, svc.charUuidLsb, svc.charUuidMsb, 0,0);
+                    svc.charInstId, svc.charUuidLsb, svc.charUuidMsb, 0, 0, 0);
             }
         } else {
             ClientMap.App app = mClientMap.getByConnId(connId);
@@ -1682,10 +1728,10 @@ public class GattService extends ProfileService {
             long service_id_uuid_msb, int char_id_inst_id, long char_id_uuid_lsb,
             long char_id_uuid_msb);
 
-    private native void gattClientGetDescriptorNative(int conn_id,
-            int service_type, int service_id_inst_id, long service_id_uuid_lsb,
-            long service_id_uuid_msb, int char_id_inst_id, long char_id_uuid_lsb,
-            long char_id_uuid_msb, long descr_id_uuid_lsb, long descr_id_uuid_msb);
+    private native void gattClientGetDescriptorNative(int conn_id, int service_type,
+            int service_id_inst_id, long service_id_uuid_lsb, long service_id_uuid_msb,
+            int char_id_inst_id, long char_id_uuid_lsb, long char_id_uuid_msb,
+            int descr_id_inst_id, long descr_id_uuid_lsb, long descr_id_uuid_msb);
 
     private native void gattClientGetIncludedServiceNative(int conn_id,
             int service_type, int service_id_inst_id,
@@ -1698,10 +1744,10 @@ public class GattService extends ProfileService {
             long service_id_uuid_msb, int char_id_inst_id, long char_id_uuid_lsb,
             long char_id_uuid_msb, int authReq);
 
-    private native void gattClientReadDescriptorNative(int conn_id,
-            int service_type, int service_id_inst_id, long service_id_uuid_lsb,
-            long service_id_uuid_msb, int char_id_inst_id, long char_id_uuid_lsb,
-            long char_id_uuid_msb, long descr_id_uuid_lsb, long descr_id_uuid_msb,
+    private native void gattClientReadDescriptorNative(int conn_id, int service_type,
+            int service_id_inst_id, long service_id_uuid_lsb, long service_id_uuid_msb,
+            int char_id_inst_id, long char_id_uuid_lsb, long char_id_uuid_msb,
+            int descr_id_inst_id, long descr_id_uuid_lsb, long descr_id_uuid_msb,
             int authReq);
 
     private native void gattClientWriteCharacteristicNative(int conn_id,
@@ -1709,10 +1755,10 @@ public class GattService extends ProfileService {
             long service_id_uuid_msb, int char_id_inst_id, long char_id_uuid_lsb,
             long char_id_uuid_msb, int write_type, int auth_req, byte[] value);
 
-    private native void gattClientWriteDescriptorNative(int conn_id,
-            int service_type, int service_id_inst_id, long service_id_uuid_lsb,
-            long service_id_uuid_msb, int char_id_inst_id, long char_id_uuid_lsb,
-            long char_id_uuid_msb, long descr_id_uuid_lsb, long descr_id_uuid_msb,
+    private native void gattClientWriteDescriptorNative(int conn_id, int service_type,
+            int service_id_inst_id, long service_id_uuid_lsb, long service_id_uuid_msb,
+            int char_id_inst_id, long char_id_uuid_lsb, long char_id_uuid_msb,
+            int descr_id_inst_id, long descr_id_uuid_lsb, long descr_id_uuid_msb,
             int write_type, int auth_req, byte[] value);
 
     private native void gattClientExecuteWriteNative(int conn_id, boolean execute);
@@ -1725,6 +1771,12 @@ public class GattService extends ProfileService {
 
     private native void gattClientReadRemoteRssiNative(int clientIf,
             String address);
+
+    private native void gattClientListenNative(int client_if, boolean start);
+
+    private native void gattSetAdvDataNative(int serverIf, boolean setScanRsp, boolean inclName,
+            boolean inclTxPower, int minInterval, int maxInterval,
+            int appearance, byte[] manufacturerData);
 
     private native void gattServerRegisterAppNative(long app_uuid_lsb,
                                                     long app_uuid_msb);
