@@ -605,15 +605,13 @@ public class BluetoothOppService extends Service {
 
         if (info.isReadyToStart()) {
             if (info.mDirection == BluetoothShare.DIRECTION_OUTBOUND) {
-                BluetoothOppUtility.putSendFileInfo(info.mUri, info.mId,
-                        BluetoothOppSendFileInfo.generateFileInfo(BluetoothOppService.this,
-                                info.mUri, info.mMimetype));
+                /* check if the file exists */
                 BluetoothOppSendFileInfo sendFileInfo = BluetoothOppUtility.getSendFileInfo(
-                        info.mUri, info.mId);
+                        info.mUri);
                 if (sendFileInfo == null || sendFileInfo.mInputStream == null) {
                     Log.e(TAG, "Can't open file for OUTBOUND info " + info.mId);
                     Constants.updateShareStatus(this, info.mId, BluetoothShare.STATUS_BAD_REQUEST);
-                    BluetoothOppUtility.closeSendFileInfo(info.mUri, info.mId);
+                    BluetoothOppUtility.closeSendFileInfo(info.mUri);
                     return;
                 }
             }
