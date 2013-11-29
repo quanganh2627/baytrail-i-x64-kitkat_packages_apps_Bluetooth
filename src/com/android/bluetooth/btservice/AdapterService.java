@@ -886,6 +886,18 @@ public class AdapterService extends Service {
             return service.configHciSnoopLog(enable);
         }
 
+        public boolean setChannelClassification(byte[] BTChannelClassification,
+                                                byte[] LEChannelMap) {
+            if (!Utils.checkCaller()) {
+                Log.w(TAG,"setChannelClassification(): not allowed for non-active user");
+                return false;
+            }
+
+            AdapterService service = getService();
+            if (service == null) return false;
+            return service.setChannelClassification(BTChannelClassification, LEChannelMap);
+        }
+
         public void registerCallback(IBluetoothCallback cb) {
             AdapterService service = getService();
             if (service == null) return ;
@@ -1343,6 +1355,11 @@ public class AdapterService extends Service {
         return configHciSnoopLogNative(enable);
     }
 
+    boolean setChannelClassification(byte[] BTChannelClassification, byte[] LEChannelMap) {
+        enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+        return setChannelClassificationNative(BTChannelClassification, LEChannelMap);
+    }
+
      void registerCallback(IBluetoothCallback cb) {
          mCallbacks.register(cb);
       }
@@ -1408,6 +1425,9 @@ public class AdapterService extends Service {
     private native boolean pinReplyNative(byte[] address, boolean accept, int len, byte[] pin);
     private native boolean sspReplyNative(byte[] address, int type, boolean
             accept, int passkey);
+
+    private native boolean setChannelClassificationNative(byte[] BTChannelClassification,
+                                                          byte[] LEChannelMap);
 
     /*package*/ native boolean getRemoteServicesNative(byte[] address);
 
