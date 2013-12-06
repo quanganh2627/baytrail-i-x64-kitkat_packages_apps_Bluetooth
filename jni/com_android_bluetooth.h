@@ -29,6 +29,12 @@ void checkAndClearExceptionFromCallback(JNIEnv* env,
 
 const bt_interface_t* getBluetoothInterface();
 
+#if PLATFORM_ASF_VERSION >= 2
+bool notifyBluetoothAccess(const int pid, const int uid,
+                           int direction, const char * mimeType );
+#define BLUETOOTH_DIRECTION_OUT 1
+#endif
+
 JNIEnv* getCallbackEnv();
 
 int register_com_android_bluetooth_hfp(JNIEnv* env);

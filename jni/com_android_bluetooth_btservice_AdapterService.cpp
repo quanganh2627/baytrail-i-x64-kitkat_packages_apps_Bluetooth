@@ -23,6 +23,11 @@
 #include "android_runtime/AndroidRuntime.h"
 #include "android_runtime/Log.h"
 
+#if PLATFORM_ASF_VERSION >= 2
+// The interface file for inserting hooks to communicate with native service securitydevice
+#include "AsfDeviceAosp.h"
+#include <binder/IPCThreadState.h>
+#endif
 #include <string.h>
 #include <pthread.h>
 
@@ -867,6 +872,46 @@ Fail:
     return -1;
 }
 
+// INTEL_FEATURE_ASF
+static bool notifyBluetoothAccessNative(JNIEnv *env, jobject object, jint direction,
+        jstring mime_type) {
+    if (mime_type == NULL) {
+        ALOGE("mime Type is null, Event not populated properly");
+        // Allowing to work in default behaviour
+        return true;
+    }
+    ALOGV("Inside notifyBluetoothAccessNative ");
+
+#if PLATFORM_ASF_VERSION >= 2
+    const char * mimeType;
+
+    const int pid = IPCThreadState::self()->getCallingPid();
+
+    const int uid = IPCThreadState::self()->getCallingUid();
+
+    mimeType = env->GetStringUTFChars(mime_type, NULL);
+
+    // Place call to function that acts as a hook point for Bluetooth events
+    // Adding hook to call security device service
+
+    ALOGV("Interface object through which service api is called");
+    AsfDeviceAosp asfDevice;
+
+    bool response = asfDevice.sendBluetoothEvent(uid, pid, direction, mimeType);
+    ALOGV("Response for Bluetooth Event from ASF is %d", response);
+
+    // If response is false, deny access to requested application and return NULL.
+    // If response is true, either ASF allowed access to bluetooth or if
+    // ASF itself not running.
+    if (!response) {
+        ALOGE("ASF client denied permission, returning NULL");
+        return false;
+    }
+#endif
+    return true;
+}
+// INTEL_FEATURE_ASF_END
+
 static int createSocketChannelNative(JNIEnv *env, jobject object, jint type,
                                      jstring name_str, jbyteArray uuidObj, jint channel, jint flag) {
     const char *service_name;
@@ -975,7 +1020,11 @@ static JNINativeMethod sMethods[] = {
     {"createSocketChannelNative", "(ILjava/lang/String;[BII)I",
      (void*) createSocketChannelNative},
     {"configHciSnoopLogNative", "(Z)Z", (void*) configHciSnoopLogNative},
-    {"setChannelClassificationNative", "([B[B)Z", (void*) setChannelClassificationNative}
+    {"setChannelClassificationNative", "([B[B)Z", (void*) setChannelClassificationNative},
+    // INTEL_FEATURE_ASF
+    {"notifyBluetoothAccessNative", "(ILjava/lang/String;)Z",
+     (void*) notifyBluetoothAccessNative},
+    // INTEL_FEATURE_ASF_END
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)
