@@ -439,6 +439,11 @@ public class PanService extends ProfileService {
                     );
                 }
                 AdapterService Obj = AdapterService.getAdapterService();
+                if (Obj == null) {
+                    Log.e(TAG,
+                            "getAdapterService() returned null in handlePanDeviceStateChange()");
+                    return;
+                }
                 // Place call to function that acts as a hook point for pan events
                 boolean result = Obj.bluetoothAccessEventCallback(direction, profileName);
                 // If result is false, deny access to requested application and return NULL.
