@@ -15,14 +15,7 @@ LOCAL_JNI_SHARED_LIBRARIES := libbluetooth_jni
 LOCAL_JAVA_LIBRARIES := javax.obex telephony-common mms-common
 LOCAL_STATIC_JAVA_LIBRARIES := com.android.vcard
 
-ifeq ($(strip $(INTEL_FEATURE_ASF)),true)
-        LOCAL_SRC_FILES += $(call all-java-files-under, \
-                ../../../vendor/intel/asf/platform/enabled)
-        LOCAL_JAVA_LIBRARIES += com.intel.asf
-else
-        LOCAL_SRC_FILES += $(call all-java-files-under, \
-                ../../../vendor/intel/asf/platform/disabled)
-endif
+LOCAL_JAVA_LIBRARIES += com.intel.asf
 
 LOCAL_REQUIRED_MODULES := libbluetooth_jni bluetooth.default
 
