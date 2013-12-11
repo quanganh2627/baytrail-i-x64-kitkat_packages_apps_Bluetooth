@@ -50,6 +50,7 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
+import com.intel.config.FeatureConfig;
 import com.intel.asf.AsfAosp;
 
 import javax.obex.HeaderSet;
@@ -453,7 +454,8 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler implemen
             mContext.getContentResolver().update(contentUri, updateValues, null, null);
         }
 
-        if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+        if (FeatureConfig.INTEL_FEATURE_ASF
+                && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
             if (D) {
                 Log.d(
                         TAG,"calling bluetoothAccessEventCallback with "+

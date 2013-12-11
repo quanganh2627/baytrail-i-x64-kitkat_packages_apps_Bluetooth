@@ -49,6 +49,7 @@ import android.os.Process;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.intel.config.FeatureConfig;
 import com.intel.asf.AsfAosp;
 
 import java.io.BufferedInputStream;
@@ -374,7 +375,8 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                 synchronized (this) {
                     mWaitingForRemote = false;
                 }
-                if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+                if (FeatureConfig.INTEL_FEATURE_ASF
+                        && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
                     if (D) {
                         Log.d(
                                 TAG,
