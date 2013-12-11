@@ -53,7 +53,10 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+
+import com.intel.config.FeatureConfig;
 import com.intel.asf.AsfAosp;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -562,7 +565,8 @@ final class A2dpStateMachine extends StateMachine {
 
             switch (state) {
                 case AUDIO_STATE_STARTED:
-                    if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+                    if (FeatureConfig.INTEL_FEATURE_ASF
+                            && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
                         boolean asfResult = true;
                         logd("Inside the processAudioStateEvent AUDIO_STATE_STARTED call");
                         int direction = 1;
