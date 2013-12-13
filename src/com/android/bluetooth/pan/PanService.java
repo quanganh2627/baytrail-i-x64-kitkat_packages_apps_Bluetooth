@@ -301,6 +301,11 @@ public class PanService extends ProfileService {
 
     boolean disconnect(BluetoothDevice device) {
         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+        int connectionState = getConnectionState(device);
+        if (connectionState != BluetoothProfile.STATE_CONNECTED &&
+            connectionState != BluetoothProfile.STATE_CONNECTING) {
+            return false;
+        }
         Message msg = mHandler.obtainMessage(MESSAGE_DISCONNECT,device);
         mHandler.sendMessage(msg);
         return true;
