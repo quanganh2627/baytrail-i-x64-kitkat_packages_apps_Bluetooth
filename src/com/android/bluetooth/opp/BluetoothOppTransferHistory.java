@@ -187,7 +187,7 @@ public class BluetoothOppTransferHistory extends Activity implements
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        if (mTransferCursor != null) {
+        if (mTransferCursor != null && menuInfo != null) {
             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
             mTransferCursor.moveToPosition(info.position);
             mContextMenuPosition = info.position;

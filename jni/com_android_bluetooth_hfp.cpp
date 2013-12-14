@@ -29,6 +29,11 @@
 #include "utils/Log.h"
 #include "android_runtime/AndroidRuntime.h"
 
+#if PLATFORM_ASF_VERSION >= 2
+// The interface file for inserting hooks to communicate with native service securitydevice
+#include "AsfDeviceAosp.h"
+#endif
+
 #include <string.h>
 
 namespace android {
@@ -329,6 +334,21 @@ static jboolean connectHfpNative(JNIEnv *env, jobject object, jbyteArray address
 
     ALOGI("%s: sBluetoothHfpInterface: %p", __FUNCTION__, sBluetoothHfpInterface);
     if (!sBluetoothHfpInterface) return JNI_FALSE;
+
+#if PLATFORM_ASF_VERSION >= 2
+    const char profile_t[] = "Hfp";
+    const int pid = IPCThreadState::self()->getCallingPid();
+    const int uid = IPCThreadState::self()->getCallingUid();
+    // Place call to function that acts as a hook point for bluetooth hfp events
+    AsfDeviceAosp asfDevice;
+    bool response = asfDevice.sendBluetoothEvent(uid, pid, BLUETOOTH_DIRECTION_OUT, profile_t);
+    // If result is false, deny access to requested application and return NULL.
+    // If result is true, either ASF allowed access to bluetooth hfp events or if
+    // ASF itself not running
+    if (!response) {
+        return JNI_FALSE;
+    }
+#endif
 
     addr = env->GetByteArrayElements(address, NULL);
     if (!addr) {

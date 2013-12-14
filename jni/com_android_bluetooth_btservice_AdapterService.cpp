@@ -23,6 +23,11 @@
 #include "android_runtime/AndroidRuntime.h"
 #include "android_runtime/Log.h"
 
+#if PLATFORM_ASF_VERSION >= 2
+// The interface file for inserting hooks to communicate with native service securitydevice
+#include "AsfDeviceAosp.h"
+#include <binder/IPCThreadState.h>
+#endif
 #include <string.h>
 #include <pthread.h>
 
@@ -43,6 +48,7 @@ static jmethodID method_aclStateChangeCallback;
 static jmethodID method_discoveryStateChangeCallback;
 
 static const bt_interface_t *sBluetoothInterface = NULL;
+static const bt_interface_intel_t *sBluetoothInterfaceIntel = NULL;
 static const btsock_interface_t *sBluetoothSocketInterface = NULL;
 static JNIEnv *callbackEnv = NULL;
 
@@ -52,6 +58,10 @@ static jfieldID sJniCallbacksField;
 
 const bt_interface_t* getBluetoothInterface() {
     return sBluetoothInterface;
+}
+
+const bt_interface_intel_t* getBluetoothInterfaceIntel() {
+    return sBluetoothInterfaceIntel;
 }
 
 JNIEnv* getCallbackEnv() {
@@ -500,6 +510,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
         if (err == 0) {
             bluetooth_module_t* btStack = (bluetooth_module_t *)abstraction;
             sBluetoothInterface = btStack->get_bluetooth_interface();
+            sBluetoothInterfaceIntel = btStack->get_bluetooth_interface_intel();
         } else {
            ALOGE("Error while opening Bluetooth library");
         }
@@ -867,6 +878,46 @@ Fail:
     return -1;
 }
 
+// INTEL_FEATURE_ASF
+static bool notifyBluetoothAccessNative(JNIEnv *env, jobject object, jint direction,
+        jstring mime_type) {
+    if (mime_type == NULL) {
+        ALOGE("mime Type is null, Event not populated properly");
+        // Allowing to work in default behaviour
+        return true;
+    }
+    ALOGV("Inside notifyBluetoothAccessNative ");
+
+#if PLATFORM_ASF_VERSION >= 2
+    const char * mimeType;
+
+    const int pid = IPCThreadState::self()->getCallingPid();
+
+    const int uid = IPCThreadState::self()->getCallingUid();
+
+    mimeType = env->GetStringUTFChars(mime_type, NULL);
+
+    // Place call to function that acts as a hook point for Bluetooth events
+    // Adding hook to call security device service
+
+    ALOGV("Interface object through which service api is called");
+    AsfDeviceAosp asfDevice;
+
+    bool response = asfDevice.sendBluetoothEvent(uid, pid, direction, mimeType);
+    ALOGV("Response for Bluetooth Event from ASF is %d", response);
+
+    // If response is false, deny access to requested application and return NULL.
+    // If response is true, either ASF allowed access to bluetooth or if
+    // ASF itself not running.
+    if (!response) {
+        ALOGE("ASF client denied permission, returning NULL");
+        return false;
+    }
+#endif
+    return true;
+}
+// INTEL_FEATURE_ASF_END
+
 static int createSocketChannelNative(JNIEnv *env, jobject object, jint type,
                                      jstring name_str, jbyteArray uuidObj, jint channel, jint flag) {
     const char *service_name;
@@ -883,7 +934,7 @@ static int createSocketChannelNative(JNIEnv *env, jobject object, jint type,
         ALOGE("failed to get uuid");
         goto Fail;
     }
-    ALOGE("SOCK FLAG = %x ***********************",flag);
+    ALOGI("SOCK FLAG = %x ***********************",flag);
     if ( (status = sBluetoothSocketInterface->listen((btsock_type_t) type, service_name,
                        (const uint8_t*) uuid, channel, &socket_fd, flag)) != BT_STATUS_SUCCESS) {
         ALOGE("Socket listen failed: %d", status);
@@ -919,6 +970,88 @@ static jboolean configHciSnoopLogNative(JNIEnv* env, jobject obj, jboolean enabl
     return result;
 }
 
+static jboolean setChannelClassificationNative(JNIEnv *env, jobject object, jbyteArray btChannel,
+                                               jbyteArray leChannel) {
+    jbyte *btChn = NULL;
+    jbyte *leChn = NULL;
+    jboolean result = JNI_FALSE;
+
+    ALOGV("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterface) return result;
+
+    btChn = env->GetByteArrayElements(btChannel, NULL);
+    if (btChn == NULL) {
+        jniThrowIOException(env, EINVAL);
+        return result;
+    }
+
+    leChn = env->GetByteArrayElements(leChannel, NULL);
+    if (leChn == NULL) {
+        env->ReleaseByteArrayElements(btChannel, btChn, NULL);
+        jniThrowIOException(env, EINVAL);
+        return result;
+    }
+
+    if (!sBluetoothInterfaceIntel) return result;
+
+    int ret = sBluetoothInterfaceIntel->set_channel_classification((uint8_t *) btChn, (uint8_t *)leChn);
+    env->ReleaseByteArrayElements(btChannel, btChn, NULL);
+    env->ReleaseByteArrayElements(leChannel, leChn, NULL);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
+static jboolean setMWSChannelParametersNative(JNIEnv *env,
+                                              jobject object,
+                                              jbyte enable,
+                                              jchar rx_center_freq,
+                                              jchar tx_center_freq,
+                                              jchar rx_channel_bandwidth,
+                                              jchar tx_channel_bandwidth,
+                                              jchar channel_type)
+{
+    jboolean result = JNI_FALSE;
+
+    ALOGV("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterfaceIntel) return result;
+
+    int ret = sBluetoothInterfaceIntel->set_mws_channel_parameters((uint8_t) enable,
+                                                              (uint16_t)rx_center_freq,
+                                                              (uint16_t)tx_center_freq,
+                                                              (uint16_t)rx_channel_bandwidth,
+                                                              (uint16_t)tx_channel_bandwidth,
+                                                              (uint16_t)channel_type);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
+static jboolean setMWSTransportLayerNative(JNIEnv *env,
+                                           jobject object,
+                                           jbyte transport_layer,
+                                           jint to_baud_rate,
+                                           jint from_baud_rate)
+{
+    jboolean result = JNI_FALSE;
+
+    ALOGV("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterfaceIntel) return result;
+
+    int ret = sBluetoothInterfaceIntel->set_mws_transport_layer((uint8_t)transport_layer,
+                                                           (uint32_t)to_baud_rate,
+                                                           (uint32_t)from_baud_rate);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
 static JNINativeMethod sMethods[] = {
     /* name, signature, funcPtr */
     {"classInitNative", "()V", (void *) classInitNative},
@@ -942,7 +1075,16 @@ static JNINativeMethod sMethods[] = {
     {"connectSocketNative", "([BI[BII)I", (void*) connectSocketNative},
     {"createSocketChannelNative", "(ILjava/lang/String;[BII)I",
      (void*) createSocketChannelNative},
-    {"configHciSnoopLogNative", "(Z)Z", (void*) configHciSnoopLogNative}
+    {"configHciSnoopLogNative", "(Z)Z", (void*) configHciSnoopLogNative},
+    {"setChannelClassificationNative", "([B[B)Z",
+     (void*) setChannelClassificationNative},
+    // INTEL_FEATURE_ASF
+    {"notifyBluetoothAccessNative", "(ILjava/lang/String;)Z",
+     (void*) notifyBluetoothAccessNative},
+    // INTEL_FEATURE_ASF_END
+    {"setMWSChannelParametersNative", "(IIIIII)Z",
+     (void*) setMWSChannelParametersNative},
+    {"setMWSTransportLayerNative", "(III)Z", (void*) setMWSTransportLayerNative}
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)
