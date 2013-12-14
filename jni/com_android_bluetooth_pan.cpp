@@ -30,10 +30,6 @@
 #include "android_runtime/AndroidRuntime.h"
 
 #include <string.h>
-#if PLATFORM_ASF_VERSION >= 2
-// The interface file for inserting hooks to communicate with native service securitydevice
-#include "AsfDeviceAosp.h"
-#endif
 
 #include <cutils/log.h>
 #define info(fmt, ...)  ALOGI ("%s(L%d): " fmt,__FUNCTION__, __LINE__,  ## __VA_ARGS__)
@@ -194,21 +190,6 @@ static jboolean connectPanNative(JNIEnv *env, jobject object, jbyteArray address
     jbyte *addr;
     jboolean ret = JNI_TRUE;
     if (!sPanIf) return JNI_FALSE;
-
-#if PLATFORM_ASF_VERSION >= 2
-    const char profile_t[] = "Pan";
-    const int pid = IPCThreadState::self()->getCallingPid();
-    const int uid = IPCThreadState::self()->getCallingUid();
-    // Place call to function that acts as a hook point for pan  events
-    AsfDeviceAosp asfDevice;
-    bool response = asfDevice.sendBluetoothEvent(uid, pid, BLUETOOTH_DIRECTION_OUT, profile_t);
-    // If result is false, deny access to requested application and return NULL
-    // If result is true, either ASF allowed access to bluetooth pan events or if
-    // ASF Client is not running
-    if (!response) {
-        return JNI_FALSE;
-    }
-#endif
 
     addr = env->GetByteArrayElements(address, NULL);
     if (!addr) {

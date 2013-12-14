@@ -85,6 +85,8 @@ public class AdapterService extends Service {
     static final String BLUETOOTH_ADMIN_PERM =
         android.Manifest.permission.BLUETOOTH_ADMIN;
     static final String BLUETOOTH_PERM = android.Manifest.permission.BLUETOOTH;
+    static final String BLUETOOTH_PRIVILEGED_PERM =
+        android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
     private static final int ADAPTER_SERVICE_TYPE=Service.START_STICKY;
 
@@ -93,27 +95,6 @@ public class AdapterService extends Service {
     }
 
     private static AdapterService sAdapterService;
-    // INTEL_FEATURE_ASF
-    /**
-     * This callback is called by all the Bluetooth hook points in ASF 2.0
-     * @param direction : This specifies whether the bluetooth access is Input/Output
-     * @param mimeType : mimeType of the file transfered
-     * @return response from the ASF Client Allow/Deny
-     */
-    public boolean bluetoothAccessEventCallback(int direction, String mimeType) {
-        if (mimeType == null) {
-            Log.e(TAG, "mimeType is null");
-            // Event not populated properly.Hence allowing bluetooth to take default action.
-            return true;
-        }
-        if (DBG) {
-            Log.d(TAG, "in bluetoothAccessEventCallback "+direction + mimeType);
-        }
-        boolean result = notifyBluetoothAccessNative(direction, mimeType);
-        return result;
-    }
-    // INTEL_FEATURE_ASF END
-
     public static synchronized AdapterService getAdapterService(){
         if (sAdapterService != null && !sAdapterService.mCleaningUp) {
             if (DBG) Log.d(TAG, "getAdapterService(): returning " + sAdapterService);
@@ -907,18 +888,6 @@ public class AdapterService extends Service {
             return service.configHciSnoopLog(enable);
         }
 
-        public boolean setChannelClassification(byte[] BTChannelClassification,
-                                                byte[] LEChannelMap) {
-            if (!Utils.checkCaller()) {
-                Log.w(TAG,"setChannelClassification(): not allowed for non-active user");
-                return false;
-            }
-
-            AdapterService service = getService();
-            if (service == null) return false;
-            return service.setChannelClassification(BTChannelClassification, LEChannelMap);
-        }
-
         public void registerCallback(IBluetoothCallback cb) {
             AdapterService service = getService();
             if (service == null) return ;
@@ -1081,8 +1050,8 @@ public class AdapterService extends Service {
     }
 
      boolean createBond(BluetoothDevice device) {
-        enforceCallingOrSelfPermission(BLUETOOTH_ADMIN_PERM,
-            "Need BLUETOOTH ADMIN permission");
+        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED_PERM,
+            "Need BLUETOOTH PRIVILEGED permission");
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp != null && deviceProp.getBondState() != BluetoothDevice.BOND_NONE) {
             return false;
@@ -1301,8 +1270,8 @@ public class AdapterService extends Service {
     }
 
      boolean setPin(BluetoothDevice device, boolean accept, int len, byte[] pinCode) {
-        enforceCallingOrSelfPermission(BLUETOOTH_ADMIN_PERM,
-                                       "Need BLUETOOTH ADMIN permission");
+        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED_PERM,
+                                       "Need BLUETOOTH PRIVILEGED permission");
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null || deviceProp.getBondState() != BluetoothDevice.BOND_BONDING) {
             return false;
@@ -1325,8 +1294,8 @@ public class AdapterService extends Service {
     }
 
      boolean setPairingConfirmation(BluetoothDevice device, boolean accept) {
-        enforceCallingOrSelfPermission(BLUETOOTH_ADMIN_PERM,
-                                       "Need BLUETOOTH ADMIN permission");
+        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED_PERM,
+                                       "Need BLUETOOTH PRIVILEGED permission");
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null || deviceProp.getBondState() != BluetoothDevice.BOND_BONDING) {
             return false;
@@ -1374,11 +1343,6 @@ public class AdapterService extends Service {
     boolean configHciSnoopLog(boolean enable) {
         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
         return configHciSnoopLogNative(enable);
-    }
-
-    boolean setChannelClassification(byte[] BTChannelClassification, byte[] LEChannelMap) {
-        enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
-        return setChannelClassificationNative(BTChannelClassification, LEChannelMap);
     }
 
      void registerCallback(IBluetoothCallback cb) {
@@ -1447,9 +1411,6 @@ public class AdapterService extends Service {
     private native boolean sspReplyNative(byte[] address, int type, boolean
             accept, int passkey);
 
-    private native boolean setChannelClassificationNative(byte[] BTChannelClassification,
-                                                          byte[] LEChannelMap);
-
     /*package*/ native boolean getRemoteServicesNative(byte[] address);
 
     // TODO(BT) move this to ../btsock dir
@@ -1457,9 +1418,6 @@ public class AdapterService extends Service {
                                            byte[] uuid, int port, int flag);
     private native int createSocketChannelNative(int type, String serviceName,
                                                  byte[] uuid, int port, int flag);
-    // INTEL_FEATURE_ASF
-    private native boolean notifyBluetoothAccessNative(int direction, String fileName);
-    // INTEL_FEATURE_ASF_END
 
     /*package*/ native boolean configHciSnoopLogNative(boolean enable);
 

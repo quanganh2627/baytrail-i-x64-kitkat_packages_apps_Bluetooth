@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import com.android.bluetooth.btservice.AdapterService;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -49,8 +48,6 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-
-import com.intel.asf.AsfAosp;
 
 import javax.obex.HeaderSet;
 import javax.obex.ObexTransport;
@@ -451,33 +448,6 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler implemen
             ContentValues updateValues = new ContentValues();
             updateValues.put(BluetoothShare._DATA, fileInfo.mFileName);
             mContext.getContentResolver().update(contentUri, updateValues, null, null);
-        }
-
-        if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-            if (D) {
-                Log.d(
-                        TAG,"calling bluetoothAccessEventCallback with "+
-                        mInfo.mDirection+ mInfo.mMimetype
-                );
-            }
-            AdapterService Obj = AdapterService.getAdapterService();
-            if (Obj != null) {
-                // Place call to function that acts as a hook point for OPP bluetooth profile
-                boolean result = Obj.bluetoothAccessEventCallback(mInfo.mDirection, mInfo.mMimetype);
-                if (D) {
-                    Log.d(
-                            TAG,
-                            "bluetoothAccessEventCallback returned "+ result
-                    );
-                }
-                // If result is false, deny access to requested application and return NULL.
-                // If result is true, either ASF allowed access to Opp profile or if
-                // ASF Client is not running
-                if (!result) {
-                    Log.e(TAG,"result is 0, ASF client denied permission");
-                    error = true;
-                }
-            }
         }
 
         int position = 0;

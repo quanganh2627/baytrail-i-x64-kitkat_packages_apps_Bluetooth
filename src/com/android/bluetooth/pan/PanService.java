@@ -42,13 +42,9 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.provider.Settings;
 import android.util.Log;
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.Utils;
 import com.android.internal.util.AsyncChannel;
-
-import com.intel.asf.AsfAosp;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,6 +78,7 @@ public class PanService extends ProfileService {
     private boolean mTetherOn = false;
 
     AsyncChannel mTetherAc;
+
 
     static {
         classInitNative();
@@ -425,34 +422,6 @@ public class PanService extends ProfileService {
             ifaceAddr = panDevice.mIfaceAddr;
         }
         Log.d(TAG, "handlePanDeviceStateChange preState: " + prevState + " state: " + state);
-        if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-            int direction = 1;
-            String profileName = "Pan";
-            if (
-                    (prevState == BluetoothProfile.STATE_DISCONNECTED) &&
-                    (state == BluetoothProfile.STATE_CONNECTED)
-            ) {
-                if (DBG) {
-                    Log.d(
-                            TAG,
-                            "calling bluetoothAccessEventCallback in PanService "
-                    );
-                }
-                AdapterService Obj = AdapterService.getAdapterService();
-                // Place call to function that acts as a hook point for pan events
-                boolean result = Obj.bluetoothAccessEventCallback(direction, profileName);
-                // If result is false, deny access to requested application and return NULL.
-                // If result is true, either ASF allowed access to Pan events or if
-                // ASF Client is not running
-                if (DBG) {
-                    Log.d(TAG, "bluetoothAccessEventCallback returned "+ result);
-                }
-                if (!result) {
-                    return;
-                }
-            }
-        }
-
         if (prevState == state) return;
         if (remote_role == BluetoothPan.LOCAL_PANU_ROLE) {
             if (state == BluetoothProfile.STATE_CONNECTED) {
