@@ -445,7 +445,9 @@ public class PanService extends ProfileService {
                     return;
                 }
                 // Place call to function that acts as a hook point for pan events
-                boolean result = Obj.bluetoothAccessEventCallback(direction, profileName);
+                boolean result = false;
+                if (Obj != null)
+                    result = Obj.bluetoothAccessEventCallback(direction, profileName);
                 // If result is false, deny access to requested application and return NULL.
                 // If result is true, either ASF allowed access to Pan events or if
                 // ASF Client is not running
