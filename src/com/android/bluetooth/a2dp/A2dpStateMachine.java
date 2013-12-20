@@ -567,12 +567,14 @@ final class A2dpStateMachine extends StateMachine {
                 case AUDIO_STATE_STARTED:
                     if (FeatureConfig.INTEL_FEATURE_ASF
                             && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-                        boolean asfResult = true;
                         logd("Inside the processAudioStateEvent AUDIO_STATE_STARTED call");
-                        int direction = 1;
-                        String profileName = "A2DP";
                         AdapterService Obj = AdapterService.getAdapterService();
                         if (Obj != null) {
+                            boolean asfResult = true;
+                            // Direction of data flow.1 in case of data flow from device to
+                            // A2dp devices.
+                            int direction = 1;
+                            String profileName = "A2DP";
                             // Place call to function that acts as a hook point for
                             // A2dp profile events
                             asfResult = Obj.bluetoothAccessEventCallback(direction, profileName);

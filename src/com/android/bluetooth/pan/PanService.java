@@ -428,8 +428,6 @@ public class PanService extends ProfileService {
         Log.d(TAG, "handlePanDeviceStateChange preState: " + prevState + " state: " + state);
         if (FeatureConfig.INTEL_FEATURE_ASF
                 && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-            int direction = 1;
-            String profileName = "Pan";
             if (
                     (prevState == BluetoothProfile.STATE_DISCONNECTED) &&
                     (state == BluetoothProfile.STATE_CONNECTED)
@@ -440,6 +438,10 @@ public class PanService extends ProfileService {
                             "calling bluetoothAccessEventCallback in PanService "
                     );
                 }
+                // Direction of data flow.1 in case of data flow from device to
+                // connected device.
+                int direction = 1;
+                String profileName = "Pan";
                 AdapterService Obj = AdapterService.getAdapterService();
                 if (Obj == null) {
                     Log.e(TAG,
