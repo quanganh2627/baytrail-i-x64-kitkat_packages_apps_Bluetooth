@@ -47,6 +47,7 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.Utils;
 import com.android.internal.util.AsyncChannel;
 
+import com.intel.config.FeatureConfig;
 import com.intel.asf.AsfAosp;
 
 import java.net.InetAddress;
@@ -425,7 +426,8 @@ public class PanService extends ProfileService {
             ifaceAddr = panDevice.mIfaceAddr;
         }
         Log.d(TAG, "handlePanDeviceStateChange preState: " + prevState + " state: " + state);
-        if (AsfAosp.ENABLE && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+        if (FeatureConfig.INTEL_FEATURE_ASF
+                && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
             int direction = 1;
             String profileName = "Pan";
             if (
