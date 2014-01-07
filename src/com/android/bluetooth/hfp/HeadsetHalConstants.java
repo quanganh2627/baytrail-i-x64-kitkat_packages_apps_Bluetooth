@@ -68,4 +68,8 @@ final public class HeadsetHalConstants {
     // match up with bthf_wbs_config_t of bt_hf.h
     final static int WBS_CONFIG_ON = 0;
     final static int WBS_CONFIG_OFF = 1;
+
+    // match up with bthf_audio_resource_requested_t of bt_hf.h
+    final static int SCO_RESOURCE_RELEASED = 0;
+    final static int SCO_RESOURCE_REQUESTED = 1;
 }
