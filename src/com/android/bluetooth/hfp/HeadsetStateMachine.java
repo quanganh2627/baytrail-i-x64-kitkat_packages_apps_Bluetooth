@@ -76,6 +76,10 @@ final class HeadsetStateMachine extends StateMachine {
     private static final String HEADSET_NAME = "bt_headset_name";
     private static final String HEADSET_NREC = "bt_headset_nrec";
     private static final String HEADSET_WBS = "bt_headset_wbs";
+    private static final String SCO_RESOURCE_REQUESTED = "sco_resource_requested";
+
+    static final int BTHF_SCO_RESOURCE_RELEASED = 0;
+    static final int BTHF_SCO_RESOURCE_REQUESTED = 1;
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
@@ -743,6 +747,9 @@ final class HeadsetStateMachine extends StateMachine {
                             Log.d(TAG, "Processing WBS state from Connected state");
                             processWBS(event.valueInt);
                             break;
+                        case EVENT_TYPE_SCO_RESOURCE_REQUESTED_STATE_CHANGED:
+                            processScoResourceRequested(event.valueInt);
+                            break;
                         default:
                             Log.e(TAG, "Unknown stack event: " + event.type);
                             break;
@@ -965,6 +972,9 @@ final class HeadsetStateMachine extends StateMachine {
                             Log.d(TAG, "Processing WBS state from AudioOn state");
                             processWBS(event.valueInt);
                             break;
+                        case EVENT_TYPE_SCO_RESOURCE_REQUESTED_STATE_CHANGED:
+                            processScoResourceRequested(event.valueInt);
+                            break;
                         default:
                             Log.e(TAG, "Unknown stack event: " + event.type);
                             break;
@@ -1013,6 +1023,7 @@ final class HeadsetStateMachine extends StateMachine {
                         broadcastAudioState(device, BluetoothHeadset.STATE_AUDIO_DISCONNECTED,
                                             BluetoothHeadset.STATE_AUDIO_CONNECTED);
                     }
+                    processScoResourceRequested(BTHF_SCO_RESOURCE_RELEASED);
                     transitionTo(mConnected);
                     break;
                 case HeadsetHalConstants.AUDIO_STATE_DISCONNECTING:
@@ -1144,6 +1155,7 @@ final class HeadsetStateMachine extends StateMachine {
                 mVoiceRecognitionStarted = false;
                 mWaitingForVoiceRecognition = false;
                 if (!isInCall()) {
+                    mAudioManager.setBluetoothScoOn(false);
                     disconnectAudioNative(getByteAddress(mCurrentDevice));
                     mAudioManager.setParameters("A2dpSuspended=false");
                 }
@@ -1212,6 +1224,7 @@ final class HeadsetStateMachine extends StateMachine {
                 mWaitingForVoiceRecognition = false;
 
                 if (stopVoiceRecognitionNative() && !isInCall()) {
+                    mAudioManager.setBluetoothScoOn(false);
                     disconnectAudioNative(getByteAddress(mCurrentDevice));
                     mAudioManager.setParameters("A2dpSuspended=false");
                 }
@@ -1830,6 +1843,17 @@ final class HeadsetStateMachine extends StateMachine {
         }
     }
 
+    private void processScoResourceRequested(int state) {
+        switch (state) {
+            case HeadsetHalConstants.SCO_RESOURCE_REQUESTED:
+                mAudioManager.setParameters(SCO_RESOURCE_REQUESTED + "=true");
+                break;
+            case HeadsetHalConstants.SCO_RESOURCE_RELEASED:
+                mAudioManager.setParameters(SCO_RESOURCE_REQUESTED + "=false");
+                break;
+        }
+    }
+
     private void onConnectionStateChanged(int state, byte[] address) {
         StackEvent event = new StackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.valueInt = state;
@@ -1924,6 +1948,12 @@ final class HeadsetStateMachine extends StateMachine {
 
     private void onWBSChanged(int state) {
         StackEvent event = new StackEvent(EVENT_TYPE_WBS);
+        event.valueInt = state;
+        sendMessage(STACK_EVENT, event);
+    }
+
+    private void onScoResourceRequested(int state) {
+        StackEvent event = new StackEvent(EVENT_TYPE_SCO_RESOURCE_REQUESTED_STATE_CHANGED);
         event.valueInt = state;
         sendMessage(STACK_EVENT, event);
     }
@@ -2073,6 +2103,7 @@ final class HeadsetStateMachine extends StateMachine {
     final private static int EVENT_TYPE_UNKNOWN_AT = 15;
     final private static int EVENT_TYPE_KEY_PRESSED = 16;
     final private static int EVENT_TYPE_WBS = 17;
+    final private static int EVENT_TYPE_SCO_RESOURCE_REQUESTED_STATE_CHANGED = 18;
 
     private class StackEvent {
         int type = EVENT_TYPE_NONE;
