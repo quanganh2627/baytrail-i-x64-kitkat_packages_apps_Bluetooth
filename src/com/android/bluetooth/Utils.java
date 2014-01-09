@@ -24,9 +24,6 @@ import android.os.ParcelUuid;
 import android.os.UserHandle;
 import android.util.Log;
 
-import com.intel.arkham.ContainerCommons;
-import com.intel.config.FeatureConfig;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -192,10 +189,6 @@ final public class Utils {
             // With calling identity cleared the current user is the foreground user.
             int foregroundUser = ActivityManager.getCurrentUser();
             ok = (foregroundUser == callingUser);
-
-            if (FeatureConfig.INTEL_FEATURE_ARKHAM) {
-                ok |= ContainerCommons.isContainerOwner(callingUser, foregroundUser);
-            }
         } catch (Exception ex) {
             Log.e(TAG,"checkIfCallerIsSelfOrForegroundUser: Exception ex=" + ex);
             ok = false;
