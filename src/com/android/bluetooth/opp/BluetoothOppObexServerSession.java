@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import com.android.bluetooth.btservice.AdapterService;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -49,9 +50,8 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import com.android.bluetooth.btservice.AdapterService;
-import com.intel.asf.AsfAosp;
 import com.intel.config.FeatureConfig;
+import com.intel.asf.AsfAosp;
 
 import javax.obex.HeaderSet;
 import javax.obex.ObexTransport;

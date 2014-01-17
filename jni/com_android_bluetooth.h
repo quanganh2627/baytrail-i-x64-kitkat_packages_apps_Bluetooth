@@ -29,13 +29,10 @@ void checkAndClearExceptionFromCallback(JNIEnv* env,
 
 const bt_interface_t* getBluetoothInterface();
 
-#ifdef INTEL_FEATURE_ASF
-#include "AsfVersionAosp.h"
-#if PLATFORM_ASF_VERSION >= ASF_VERSION_2
+#if PLATFORM_ASF_VERSION >= 2
 bool notifyBluetoothAccess(const int pid, const int uid,
                            int direction, const char * mimeType );
 #define BLUETOOTH_DIRECTION_OUT 1
-#endif
 #endif
 
 JNIEnv* getCallbackEnv();
