@@ -30,12 +30,9 @@
 #include "android_runtime/AndroidRuntime.h"
 
 #include <string.h>
-#ifdef INTEL_FEATURE_ASF
-#include "AsfVersionAosp.h"
-#if PLATFORM_ASF_VERSION >= ASF_VERSION_2
+#if PLATFORM_ASF_VERSION >= 2
 // The interface file for inserting hooks to communicate with native service securitydevice
 #include "AsfDeviceAosp.h"
-#endif
 #endif
 
 #include <cutils/log.h>
@@ -198,7 +195,7 @@ static jboolean connectPanNative(JNIEnv *env, jobject object, jbyteArray address
     jboolean ret = JNI_TRUE;
     if (!sPanIf) return JNI_FALSE;
 
-#if defined(INTEL_FEATURE_ASF) && (PLATFORM_ASF_VERSION >= ASF_VERSION_2)
+#if PLATFORM_ASF_VERSION >= 2
     const char profile_t[] = "Pan";
     const int pid = IPCThreadState::self()->getCallingPid();
     const int uid = IPCThreadState::self()->getCallingUid();

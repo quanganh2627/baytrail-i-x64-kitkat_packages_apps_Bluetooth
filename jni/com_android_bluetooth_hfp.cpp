@@ -29,12 +29,9 @@
 #include "utils/Log.h"
 #include "android_runtime/AndroidRuntime.h"
 
-#ifdef INTEL_FEATURE_ASF
-#include "AsfVersionAosp.h"
-#if PLATFORM_ASF_VERSION >= ASF_VERSION_2
+#if PLATFORM_ASF_VERSION >= 2
 // The interface file for inserting hooks to communicate with native service securitydevice
 #include "AsfDeviceAosp.h"
-#endif
 #endif
 
 #include <string.h>
@@ -338,7 +335,7 @@ static jboolean connectHfpNative(JNIEnv *env, jobject object, jbyteArray address
     ALOGI("%s: sBluetoothHfpInterface: %p", __FUNCTION__, sBluetoothHfpInterface);
     if (!sBluetoothHfpInterface) return JNI_FALSE;
 
-#if defined(INTEL_FEATURE_ASF) && (PLATFORM_ASF_VERSION >= ASF_VERSION_2)
+#if PLATFORM_ASF_VERSION >= 2
     const char profile_t[] = "Hfp";
     const int pid = IPCThreadState::self()->getCallingPid();
     const int uid = IPCThreadState::self()->getCallingUid();
