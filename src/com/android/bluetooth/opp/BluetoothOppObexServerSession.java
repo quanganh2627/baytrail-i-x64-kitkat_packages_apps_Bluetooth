@@ -626,8 +626,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler implemen
 
     @Override
     public void onClose() {
-        if (V) Log.v(TAG, "release WakeLock");
-        releaseWakeLocks();
+        PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
         /* onClose could happen even before start() where mCallback is set */
         if (mCallback != null) {
@@ -636,5 +635,15 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler implemen
             msg.obj = mInfo;
             msg.sendToTarget();
         }
+
+        boolean isScreenOn = pm.isScreenOn();
+
+        if (!isScreenOn ) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+        }
+        releaseWakeLocks();
     }
 }
