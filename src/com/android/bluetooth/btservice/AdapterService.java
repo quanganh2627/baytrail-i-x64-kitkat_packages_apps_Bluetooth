@@ -101,15 +101,16 @@ public class AdapterService extends Service {
      * @return response from the ASF Client Allow/Deny
      */
     public boolean bluetoothAccessEventCallback(int direction, String mimeType) {
-        if (mimeType == null) {
+        boolean result = true;
+        if (mimeType != null) {
+            if (DBG) {
+                Log.d(TAG, "in bluetoothAccessEventCallback "+direction + mimeType);
+            }
+            result = notifyBluetoothAccessNative(direction, mimeType);
+        } else {
             Log.e(TAG, "mimeType is null");
             // Event not populated properly.Hence allowing bluetooth to take default action.
-            return true;
         }
-        if (DBG) {
-            Log.d(TAG, "in bluetoothAccessEventCallback "+direction + mimeType);
-        }
-        boolean result = notifyBluetoothAccessNative(direction, mimeType);
         return result;
     }
     // INTEL_FEATURE_ASF END
