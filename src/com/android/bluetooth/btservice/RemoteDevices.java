@@ -24,6 +24,8 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelUuid;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
@@ -50,11 +52,18 @@ final class RemoteDevices {
 
     private HashMap<BluetoothDevice, DeviceProperties> mDevices;
 
+    private WakeLock mWakeLock;
+
     RemoteDevices(AdapterService service) {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mAdapterService = service;
         mSdpTracker = new ArrayList<BluetoothDevice>();
         mDevices = new HashMap<BluetoothDevice, DeviceProperties>();
+        Context context = service.getApplicationContext();
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                    | PowerManager.ON_AFTER_RELEASE, this.getClass().getName());
+        mWakeLock.setReferenceCounted(false);
     }
 
 
@@ -345,6 +354,7 @@ final class RemoteDevices {
                      }*/
             // Generate a variable PIN. This is not truly random but good enough.
             int pin = (int) Math.floor(Math.random() * 1000000);
+            mWakeLock.acquire(1000);
             sendDisplayPinIntent(address, pin);
             return;
         }
@@ -354,6 +364,7 @@ final class RemoteDevices {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, getDevice(address));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT,
                 BluetoothDevice.PAIRING_VARIANT_PIN);
+        mWakeLock.acquire(1000);
         mAdapterService.sendOrderedBroadcast(intent, mAdapterService.BLUETOOTH_ADMIN_PERM);
         return;
     }
@@ -396,6 +407,7 @@ final class RemoteDevices {
             intent.putExtra(BluetoothDevice.EXTRA_PAIRING_KEY, passkey);
         }
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, variant);
+        mWakeLock.acquire(1000);
         mAdapterService.sendOrderedBroadcast(intent, mAdapterService.BLUETOOTH_ADMIN_PERM);
     }
 
