@@ -76,7 +76,10 @@ import java.util.UUID;
      */
     static boolean handleDebugAction(GattService svc, Intent intent) {
         if (!DEBUG_ADMIN) return false;
-
+        if (intent == null) {
+            Log.e(TAG, "intent parameter is null");
+            return false;
+        }
         String action = intent.getAction();
         Log.d(TAG, "handleDebugAction() action=" + action);
 
