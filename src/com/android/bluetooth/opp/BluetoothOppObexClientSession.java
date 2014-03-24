@@ -87,14 +87,14 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
         mTransport = transport;
     }
 
-    public void start(Handler handler, int numShares) {
+    public synchronized void start(Handler handler, int numShares) {
         if (D) Log.d(TAG, "Start!");
         mCallback = handler;
         mThread = new ClientThread(mContext, mTransport, numShares);
         mThread.start();
     }
 
-    public void stop() {
+    public synchronized void stop() {
         if (D) Log.d(TAG, "Stop!");
         if (mThread != null) {
             mInterrupted = true;
