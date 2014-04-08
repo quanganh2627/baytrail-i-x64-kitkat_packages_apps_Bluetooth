@@ -894,29 +894,28 @@ static bool notifyBluetoothAccessNative(JNIEnv *env, jobject object, jint direct
     ALOGV ("Inside notifyBluetoothAccessNative ");
 
 #if defined(INTEL_FEATURE_ASF) && (PLATFORM_ASF_VERSION >= ASF_VERSION_2)
-    const char * mimeType;
-
     const int pid = IPCThreadState::self()->getCallingPid();
-
     const int uid = IPCThreadState::self()->getCallingUid();
-
-    mimeType = env->GetStringUTFChars(mime_type, NULL);
-
-    // Place call to function that acts as a hook point for Bluetooth events
-    // Adding hook to call security device service
-
-    ALOGV ("Interface object through which service api is called");
-    AsfDeviceAosp asfDevice;
-
-    bool response = asfDevice.sendBluetoothEvent(uid, pid, direction, mimeType);
-    ALOGV ("Response for Bluetooth Event from ASF is %d", response);
-
-    // If response is false, deny access to requested application and return NULL.
-    // If response is true, either ASF allowed access to bluetooth or if
-    // ASF itself not running.
-    if (!response) {
-        ALOGE("ASF client denied permission, returning NULL");
-        return false;
+    const char * mimeType = env->GetStringUTFChars(mime_type, NULL);
+    if (mimeType != NULL) {
+        /*
+         * Place call to function that acts as a hook point for
+         * Bluetooth events Adding hook to call security device
+         * service
+         */
+        ALOGV("Interface object through which service api is called");
+        bool response = AsfDeviceAosp::sendBluetoothEvent(uid, pid, direction, mimeType);
+        ALOGV("Response for Bluetooth Event from ASF is %d", response);
+        env->ReleaseStringUTFChars(mime_type, mimeType);
+        /*
+         * If response is false, deny access to requested application
+         * and return NULL.  If response is true, either ASF allowed
+         * access to bluetooth or if ASF itself not running.
+         */
+        if (!response) {
+            ALOGE("ASF client denied permission, returning false");
+            return false;
+        }
     }
 #endif
     return true;
