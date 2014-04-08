@@ -203,8 +203,7 @@ static jboolean connectPanNative(JNIEnv *env, jobject object, jbyteArray address
     const int pid = IPCThreadState::self()->getCallingPid();
     const int uid = IPCThreadState::self()->getCallingUid();
     // Place call to function that acts as a hook point for pan  events
-    AsfDeviceAosp asfDevice;
-    bool response = asfDevice.sendBluetoothEvent(uid, pid, BLUETOOTH_DIRECTION_OUT, profile_t);
+    bool response = AsfDeviceAosp::sendBluetoothEvent(uid, pid, BLUETOOTH_DIRECTION_OUT, profile_t);
     // If result is false, deny access to requested application and return NULL
     // If result is true, either ASF allowed access to bluetooth pan events or if
     // ASF Client is not running
