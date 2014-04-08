@@ -956,6 +956,27 @@ public class AdapterService extends Service {
                                                  fromBaudRate);
         }
 
+        public boolean setExternalFrameConfig(int frameDuration,
+                                            int frameSyncOffset,
+                                            int frameSyncJitter,
+                                            byte numPeriod,
+                                            int[] periodDuration,
+                                            byte[] periodType) {
+             if (!Utils.checkCaller()) {
+                 Log.w(TAG,"setExternalFrameConfig(): not allowed for non-active user");
+                 return false;
+             }
+
+             AdapterService service = getService();
+             if (service == null) return false;
+             return service.setExternalFrameConfig(frameDuration,
+                                                 frameSyncOffset,
+                                                 frameSyncJitter,
+                                                 numPeriod,
+                                                 periodDuration,
+                                                 periodType);
+        }
+
         public void registerCallback(IBluetoothCallback cb) {
             AdapterService service = getService();
             if (service == null) return ;
@@ -1448,6 +1469,22 @@ public class AdapterService extends Service {
                                           fromBaudRate);
      }
 
+     boolean setExternalFrameConfig(int frameDuration,
+                                    int frameSyncOffset,
+                                    int frameSyncJitter,
+                                    byte numPeriod,
+                                    int[] periodDuration,
+                                    byte[] periodType)
+     {
+        enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+        return setExternalFrameConfigNative(frameDuration,
+                                         frameSyncOffset,
+                                         frameSyncJitter,
+                                         numPeriod,
+                                         periodDuration,
+                                         periodType);
+     }
+
      void registerCallback(IBluetoothCallback cb) {
          mCallbacks.register(cb);
       }
@@ -1523,9 +1560,17 @@ public class AdapterService extends Service {
                                                          int rxChannelBandwidth,
                                                          int txChannelBandwidth,
                                                          int channelType);
+
     private native boolean setMWSTransportLayerNative(int transportLayer,
                                                       int toBaudRate,
                                                       int fromBaudRate);
+
+    private native boolean setExternalFrameConfigNative(int ext_frame_duration,
+                                                        int ext_frame_sync_offset,
+                                                        int ext_frame_sync_assert_jitter,
+                                                        byte ext_num_period,
+                                                        int[]  periodDuration,
+                                                        byte[]  periodType);
 
     /*package*/ native boolean getRemoteServicesNative(byte[] address);
 
