@@ -977,6 +977,17 @@ public class AdapterService extends Service {
                                                  periodType);
         }
 
+        public boolean setMwsSignaling(int[] params) {
+            if (!Utils.checkCaller()) {
+                Log.w(TAG, "setMwsSignaling(): not allowed for non-active user");
+                return false;
+            }
+
+            AdapterService service = getService();
+            if (service == null) return false;
+            return service.setMwsSignaling(params);
+        }
+
         public void registerCallback(IBluetoothCallback cb) {
             AdapterService service = getService();
             if (service == null) return ;
@@ -1485,6 +1496,12 @@ public class AdapterService extends Service {
                                          periodType);
      }
 
+     boolean setMwsSignaling(int[] params)
+     {
+         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+         return setMwsSignalingNative(params);
+     }
+
      void registerCallback(IBluetoothCallback cb) {
          mCallbacks.register(cb);
       }
@@ -1571,6 +1588,8 @@ public class AdapterService extends Service {
                                                         byte ext_num_period,
                                                         int[]  periodDuration,
                                                         byte[]  periodType);
+
+    private native boolean setMwsSignalingNative(int[] params);
 
     /*package*/ native boolean getRemoteServicesNative(byte[] address);
 
