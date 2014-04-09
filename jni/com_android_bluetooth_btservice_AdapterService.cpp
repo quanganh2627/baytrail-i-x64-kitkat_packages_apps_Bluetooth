@@ -41,6 +41,7 @@
 namespace android {
 
 #define ADDITIONAL_NREFS 50
+#define MWS_SIGNALING_PARAMS_NUMBER 15
 static jmethodID method_stateChangeCallback;
 static jmethodID method_adapterPropertyChangedCallback;
 static jmethodID method_devicePropertyChangedCallback;
@@ -1109,6 +1110,39 @@ static jboolean setExternalFrameConfigNative(JNIEnv *env,
     return result;
 }
 
+static jboolean setMwsSignalingNative(JNIEnv *env,
+                                           jobject object,
+                                           jintArray  params)
+{
+    jboolean result = JNI_FALSE;
+    jint *parameters = NULL;
+
+    ALOGV ("%s:",__FUNCTION__);
+
+    if (!sBluetoothInterfaceIntel) return result;
+
+    parameters = env->GetIntArrayElements(params, NULL);
+    if (parameters == NULL) {
+        jniThrowIOException(env, EINVAL);
+        return result;
+    }
+    /*  aidl does not support short type. need to work with a int array, and convert
+        it into short array before passing it to the stack */
+    jshort parameters_short[MWS_SIGNALING_PARAMS_NUMBER];
+    int i;
+    for (i =0; i < MWS_SIGNALING_PARAMS_NUMBER; i++) {
+        parameters_short[i] = (jshort) parameters[i];
+    }
+
+    int ret = sBluetoothInterfaceIntel->set_mws_signaling((uint16_t *) parameters_short);
+
+    env->ReleaseIntArrayElements(params, parameters, JNI_ABORT);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
 static JNINativeMethod sMethods[] = {
     /* name, signature, funcPtr */
     {"classInitNative", "()V", (void *) classInitNative},
@@ -1144,7 +1178,9 @@ static JNINativeMethod sMethods[] = {
     {"setMWSTransportLayerNative", "(III)Z",
      (void*) setMWSTransportLayerNative},
     {"setExternalFrameConfigNative", "(IIIB[I[B)Z",
-     (void*) setExternalFrameConfigNative}
+     (void*) setExternalFrameConfigNative},
+    {"setMwsSignalingNative", "([I)Z",
+     (void*) setMwsSignalingNative}
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)
