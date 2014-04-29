@@ -1,4 +1,4 @@
-ifneq ($(COMBO_CHIP_VENDOR), intel)
+ifneq ($(USE_SPECIFIC_BT_WCS), true)
 
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
@@ -26,4 +26,4 @@ include $(BUILD_PACKAGE)
 
 include $(call all-makefiles-under,$(LOCAL_PATH))
 
-endif # COMBO_CHIP_VENDOR != intel
+endif # USE_SPECIFIC_BT_WCS != true
