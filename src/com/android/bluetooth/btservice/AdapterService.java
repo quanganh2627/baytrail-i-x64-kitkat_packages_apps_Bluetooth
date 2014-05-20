@@ -988,6 +988,17 @@ public class AdapterService extends Service {
             return service.setMwsSignaling(params);
         }
 
+        public boolean setVendorSpecificCommand(int opcode, byte[] params, byte length) {
+            if (!Utils.checkCaller()) {
+                Log.w(TAG, "setVendorSpecificCommand(): not allowed for non-active user");
+                return false;
+            }
+
+            AdapterService service = getService();
+            if (service == null) return false;
+            return service.setVendorSpecificCommand(opcode, params, length);
+        }
+
         public void registerCallback(IBluetoothCallback cb) {
             AdapterService service = getService();
             if (service == null) return ;
@@ -1502,6 +1513,13 @@ public class AdapterService extends Service {
          return setMwsSignalingNative(params);
      }
 
+     boolean setVendorSpecificCommand(int opcode, byte[] params, byte length)
+     {
+         enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+         return setVendorSpecificCommandNative(opcode, params, length);
+     }
+
+
      void registerCallback(IBluetoothCallback cb) {
          mCallbacks.register(cb);
       }
@@ -1590,6 +1608,7 @@ public class AdapterService extends Service {
                                                         byte[]  periodType);
 
     private native boolean setMwsSignalingNative(int[] params);
+    private native boolean setVendorSpecificCommandNative(int opcode, byte[] params, byte length);
 
     /*package*/ native boolean getRemoteServicesNative(byte[] address);
 

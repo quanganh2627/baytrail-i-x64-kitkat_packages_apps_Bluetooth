@@ -54,6 +54,7 @@ static jmethodID method_discoveryStateChangeCallback;
 
 static const bt_interface_t *sBluetoothInterface = NULL;
 static const bt_interface_intel_t *sBluetoothInterfaceIntel = NULL;
+static const bt_vs_interface_t *sBluetoothVendorInterface = NULL;
 static const btsock_interface_t *sBluetoothSocketInterface = NULL;
 static JNIEnv *callbackEnv = NULL;
 
@@ -67,6 +68,10 @@ const bt_interface_t* getBluetoothInterface() {
 
 const bt_interface_intel_t* getBluetoothInterfaceIntel() {
     return sBluetoothInterfaceIntel;
+}
+
+const bt_vs_interface_t* getBluetoothVendorInterface() {
+    return sBluetoothVendorInterface;
 }
 
 JNIEnv* getCallbackEnv() {
@@ -516,6 +521,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
             bluetooth_module_t* btStack = (bluetooth_module_t *)abstraction;
             sBluetoothInterface = btStack->get_bluetooth_interface();
             sBluetoothInterfaceIntel = btStack->get_bluetooth_interface_intel();
+            sBluetoothVendorInterface = btStack->get_bluetooth_vs_interface();
         } else {
            ALOGE("Error while opening Bluetooth library");
         }
@@ -1111,7 +1117,7 @@ static jboolean setExternalFrameConfigNative(JNIEnv *env,
 
 static jboolean setMwsSignalingNative(JNIEnv *env,
                                            jobject object,
-                                           jintArray  params)
+                                           jintArray params)
 {
     jboolean result = JNI_FALSE;
     jint *parameters = NULL;
@@ -1136,6 +1142,35 @@ static jboolean setMwsSignalingNative(JNIEnv *env,
     int ret = sBluetoothInterfaceIntel->set_mws_signaling((uint16_t *) parameters_short);
 
     env->ReleaseIntArrayElements(params, parameters, JNI_ABORT);
+
+    result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+
+    return result;
+}
+
+static jboolean setVendorSpecificCommandNative(JNIEnv *env,
+                                               jobject object,
+                                               jint opcode,
+                                               jbyteArray params,
+                                               jbyte length)
+{
+    jboolean result = JNI_FALSE;
+    jbyte *parameters = NULL;
+
+    ALOGE ("%s",__FUNCTION__);
+
+    if (!sBluetoothVendorInterface) return result;
+
+    parameters = env->GetByteArrayElements(params, NULL);
+    if (parameters == NULL) {
+        jniThrowIOException(env, EINVAL);
+        return result;
+    }
+    int ret = sBluetoothVendorInterface->set_vendor_specific((uint16_t) opcode,
+                                                            (uint8_t *) parameters,
+                                                            (uint8_t) length);
+
+    env->ReleaseByteArrayElements(params, parameters, JNI_ABORT);
 
     result = (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 
@@ -1179,7 +1214,9 @@ static JNINativeMethod sMethods[] = {
     {"setExternalFrameConfigNative", "(IIIB[I[B)Z",
      (void*) setExternalFrameConfigNative},
     {"setMwsSignalingNative", "([I)Z",
-     (void*) setMwsSignalingNative}
+     (void*) setMwsSignalingNative},
+    {"setVendorSpecificCommandNative", "(I[BB)Z",
+     (void*) setVendorSpecificCommandNative}
 };
 
 int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env)
