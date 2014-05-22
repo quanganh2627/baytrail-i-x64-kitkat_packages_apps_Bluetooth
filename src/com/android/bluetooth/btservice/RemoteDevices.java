@@ -97,12 +97,20 @@ final class RemoteDevices {
     }
 
     class DeviceProperties {
+        private static final int DEVICE_TYPE_BLE = 0x02;
+
+        private static final int BLE_APPEARANCE_HID          = 960;
+        private static final int BLE_APPEARANCE_HID_KEYBOARD = 961;
+        private static final int BLE_APPEARANCE_HID_MOUSE    = 962;
+        private static final int BLE_APPEARANCE_HID_JOYSTICK = 963;
+
         private String mName;
         private byte[] mAddress;
         private int mBluetoothClass;
         private short mRssi;
         private ParcelUuid[] mUuids;
         private int mDeviceType;
+        private int mAppearance;
         private String mAlias;
         private int mBondState;
 
@@ -124,7 +132,16 @@ final class RemoteDevices {
          */
         int getBluetoothClass() {
             synchronized (mObject) {
-                return mBluetoothClass;
+                int btClass;
+                /* Keep compatibility here */
+                if (mDeviceType == DEVICE_TYPE_BLE) {
+                    btClass = appearanceToClass(mAppearance);
+                }
+                else {
+                    btClass = mBluetoothClass;
+                }
+
+                return btClass;
             }
         }
 
@@ -208,6 +225,21 @@ final class RemoteDevices {
                 return mBondState;
             }
         }
+
+        private int appearanceToClass(int appearance) {
+            switch (appearance) {
+                case BLE_APPEARANCE_HID:
+                    return BluetoothClass.Device.Major.PERIPHERAL;
+                case BLE_APPEARANCE_HID_KEYBOARD:
+                    return BluetoothClass.Device.PERIPHERAL_KEYBOARD;
+                case BLE_APPEARANCE_HID_MOUSE:
+                    return BluetoothClass.Device.PERIPHERAL_POINTING;
+                case BLE_APPEARANCE_HID_JOYSTICK:
+                    return BluetoothClass.Device.Major.PERIPHERAL;
+                default:
+                    return BluetoothClass.Device.Major.UNCATEGORIZED;
+            }
+        }
     }
 
 
@@ -233,6 +265,7 @@ final class RemoteDevices {
 
     void devicePropertyChangedCallback(byte[] address, int[] types, byte[][] values) {
         Intent intent;
+        boolean sendClassIntent = false;
         byte[] val;
         int type;
         BluetoothDevice bdDevice = getDevice(address);
@@ -273,14 +306,16 @@ final class RemoteDevices {
                             device.mAddress = val;
                             debugLog("Remote Address is:" + Utils.getAddressStringFromByte(val));
                             break;
+                        case AbstractionLayer.BT_PROPERTY_BLE_APPEARANCE:
+                            device.mAppearance = Utils.byteArrayToInt(val);
+                            // Appearance may be returned from getBluetoothClass(),
+                            // so advertise that class changed
+                            sendClassIntent = true;
+                            debugLog("Appearance is:" + device.mAppearance);
+                            break;
                         case AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE:
                             device.mBluetoothClass =  Utils.byteArrayToInt(val);
-                            intent = new Intent(BluetoothDevice.ACTION_CLASS_CHANGED);
-                            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bdDevice);
-                            intent.putExtra(BluetoothDevice.EXTRA_CLASS,
-                                    new BluetoothClass(device.mBluetoothClass));
-                            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-                            mAdapterService.sendBroadcast(intent, mAdapterService.BLUETOOTH_PERM);
+                            sendClassIntent = true;
                             debugLog("Remote class is:" + device.mBluetoothClass);
                             break;
                         case AbstractionLayer.BT_PROPERTY_UUIDS:
@@ -301,6 +336,16 @@ final class RemoteDevices {
                 }
             }
         }
+
+        // send intent only once even if APPEARANCE and CoD are both provided
+        if (sendClassIntent) {
+            intent = new Intent(BluetoothDevice.ACTION_CLASS_CHANGED);
+            intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bdDevice);
+            intent.putExtra(BluetoothDevice.EXTRA_CLASS,
+                new BluetoothClass(device.getBluetoothClass()));
+            intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
+            mAdapterService.sendBroadcast(intent, mAdapterService.BLUETOOTH_PERM);
+        }
     }
 
     void deviceFoundCallback(byte[] address) {
@@ -317,7 +362,7 @@ final class RemoteDevices {
         Intent intent = new Intent(BluetoothDevice.ACTION_FOUND);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothDevice.EXTRA_CLASS,
-                new BluetoothClass(Integer.valueOf(deviceProp.mBluetoothClass)));
+            new BluetoothClass(deviceProp.getBluetoothClass()));
         intent.putExtra(BluetoothDevice.EXTRA_RSSI, deviceProp.mRssi);
         intent.putExtra(BluetoothDevice.EXTRA_NAME, deviceProp.mName);
 

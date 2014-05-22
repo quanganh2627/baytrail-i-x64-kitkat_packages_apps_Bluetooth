@@ -45,6 +45,9 @@ final public class AbstractionLayer {
     static final int BT_PROPERTY_REMOTE_FRIENDLY_NAME = 0x0A;
     static final int BT_PROPERTY_REMOTE_RSSI = 0x0B;
 
+    // 0x0C is defined as BT_PROPERTY_REMOTE_VERSION in bluetooth.h
+    static final int BT_PROPERTY_BLE_APPEARANCE = 0x0D;
+
     static final int BT_DEVICE_TYPE_BREDR = 0x01;
     static final int BT_DEVICE_TYPE_BLE = 0x02;
     static final int BT_DEVICE_TYPE_DUAL = 0x03;
