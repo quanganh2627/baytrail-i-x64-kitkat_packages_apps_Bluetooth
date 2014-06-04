@@ -277,11 +277,18 @@ final class RemoteDevices {
             device = getDeviceProperties(bdDevice);
         }
 
+        if (device == null) {
+            errorLog("devicePropertyChangedCallback: bdDevice: " + bdDevice
+                     + " no device properties");
+            return;
+        }
+
         for (int j = 0; j < types.length; j++) {
             type = types[j];
             val = values[j];
-            if(val.length <= 0)
-                errorLog("devicePropertyChangedCallback: bdDevice: " + bdDevice + ", value is empty for type: " + type);
+            if (val.length <= 0)
+                errorLog("devicePropertyChangedCallback: bdDevice: " + bdDevice
+                         + ", value is empty for type: " + type);
             else {
                 synchronized(mObject) {
                     switch (type) {
