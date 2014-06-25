@@ -61,6 +61,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+import com.android.internal.telephony.TelephonyConstants;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -162,6 +163,11 @@ final class HeadsetStateMachine extends StateMachine {
     private BluetoothDevice mCurrentDevice = null;
     private BluetoothDevice mTargetDevice = null;
     private BluetoothDevice mIncomingDevice = null;
+
+    // Codec definition
+    private static final int CODEC_CVSD = 0;
+    private static final int CODEC_MSBC = 1;
+    private static final String HEADSET_RATE = "bthf_rate";
 
     static {
         classInitNative();
@@ -782,8 +788,12 @@ final class HeadsetStateMachine extends StateMachine {
 
             switch (state) {
                 case HeadsetHalConstants.AUDIO_STATE_CONNECTED:
+                case HeadsetHalConstants.AUDIO_STATE_CONNECTED_MSBC:
                     // TODO(BT) should I save the state for next broadcast as the prevState?
                     mAudioState = BluetoothHeadset.STATE_AUDIO_CONNECTED;
+                    int codec = (state == HeadsetHalConstants.AUDIO_STATE_CONNECTED) ?
+                            CODEC_CVSD : CODEC_MSBC;
+                    sendCodecParameter(codec);
                     mAudioManager.setBluetoothScoOn(true);
                     broadcastAudioState(device, BluetoothHeadset.STATE_AUDIO_CONNECTED,
                                         BluetoothHeadset.STATE_AUDIO_CONNECTING);
@@ -799,6 +809,15 @@ final class HeadsetStateMachine extends StateMachine {
                     Log.e(TAG, "Audio State Device: " + device + " bad state: " + state);
                     break;
             }
+        }
+
+        /**
+         * Notify audio system current codec negotiated with handsfree
+         */
+        private void sendCodecParameter(int codec) {
+            String parameter = HEADSET_RATE + (codec == CODEC_CVSD? "8khz" : "16khz");
+            log("Codec parameter: " + parameter);
+            mAudioManager.setParameters(parameter);
         }
 
         private void processSlcConnected() {
@@ -1401,6 +1420,7 @@ final class HeadsetStateMachine extends StateMachine {
     }
 
     private void processAnswerCall() {
+        if (DBG) log("try to processAnswerCall");
         if (mPhoneProxy != null) {
             try {
                 mPhoneProxy.answerCall();
@@ -1413,6 +1433,7 @@ final class HeadsetStateMachine extends StateMachine {
     }
 
     private void processHangupCall() {
+        if (DBG) log("try to processHangupCall");
         // Close the virtual call if active. Virtual call should be
         // terminated for CHUP callback event
         if (isVirtualCallInProgress()) {
@@ -1982,6 +2003,18 @@ final class HeadsetStateMachine extends StateMachine {
         return ret;
     }
 
+    public int getActivePhoneId() {
+        if (!TelephonyConstants.IS_DSDS) return 0;
+        int phoneId = 0;
+        try {
+            phoneId =  mPhoneProxy.getActivePhoneId();
+        } catch (RemoteException e) {
+            Log.e(TAG, Log.getStackTraceString(new Throwable()));
+        }
+        log("getActivePhoneId:" + phoneId);
+        return phoneId;
+    }
+	
     @Override
     protected void log(String msg) {
         if (DBG) {

@@ -256,6 +256,7 @@ public class HeadsetService extends ProfileService {
 
         public void phoneStateChanged(int numActive, int numHeld, int callState,
                                       String number, int type) {
+            if (DBG) Log.d(TAG, "phoneStateChanged:" + numActive + "," + numHeld + "," + callState);
             HeadsetService service = getService();
             if (service == null) return;
             service.phoneStateChanged(numActive, numHeld, callState, number, type);

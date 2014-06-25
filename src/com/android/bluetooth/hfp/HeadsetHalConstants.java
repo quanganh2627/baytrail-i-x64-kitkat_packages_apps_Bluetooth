@@ -35,6 +35,7 @@ final public class HeadsetHalConstants {
     final static int AUDIO_STATE_CONNECTING = 1;
     final static int AUDIO_STATE_CONNECTED = 2;
     final static int AUDIO_STATE_DISCONNECTING = 3;
+    final static int AUDIO_STATE_CONNECTED_MSBC = 4;
 
     // match up with bthf_vr_state_t enum of bt_hf.h
     final static int VR_STATE_STOPPED = 0;

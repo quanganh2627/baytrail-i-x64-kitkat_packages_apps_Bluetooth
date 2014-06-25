@@ -21,6 +21,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
+import com.android.internal.telephony.TelephonyConstants;
 import android.util.Log;
 
 // Note:
@@ -29,9 +30,11 @@ import android.util.Log;
 // handler only.
 class HeadsetPhoneState {
     private static final String TAG = "HeadsetPhoneState";
+    private static final boolean DBG = true;
 
     private HeadsetStateMachine mStateMachine;
     private TelephonyManager mTelephonyManager;
+    private TelephonyManager mTelephonyManager2;
     private ServiceState mServiceState;
 
     // HFP 1.6 CIND service
@@ -59,31 +62,45 @@ class HeadsetPhoneState {
 
     private int mMicVolume = 0;
 
-    private boolean mListening = false;
+    private boolean mListening[] = {false,false};
 
     HeadsetPhoneState(Context context, HeadsetStateMachine stateMachine) {
         mStateMachine = stateMachine;
         mTelephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        mPhoneStateListener = new PhoneStateListenerDualSIM(0);
+        if (TelephonyConstants.IS_DSDS) {
+            mTelephonyManager2 = TelephonyManager.getTmByPhoneId(1, context);
+            mPhoneStateListener2 = new PhoneStateListenerDualSIM(1);
+            Log.d(TAG, "DSDS,tm:" + mTelephonyManager2);
+        }
     }
 
     public void cleanup() {
         listenForPhoneState(false);
         mTelephonyManager = null;
+        mTelephonyManager2 = null;
         mStateMachine = null;
     }
 
     void listenForPhoneState(boolean start) {
+        Log.d(TAG, "listenForPhoneState:" + start);
+        listenForPhoneState(start, 0);
+        listenForPhoneState(start, 1);
+    }
+    void listenForPhoneState(boolean start, int phoneId) {
+        TelephonyManager tm = phoneId == 0 ? mTelephonyManager : mTelephonyManager2;
+        PhoneStateListener listener = phoneId == 0 ? mPhoneStateListener : mPhoneStateListener2;
         if (start) {
-            if (!mListening) {
-                mTelephonyManager.listen(mPhoneStateListener,
-                                         PhoneStateListener.LISTEN_SERVICE_STATE |
-                                         PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
-                mListening = true;
+            if (!mListening[phoneId]) {
+                tm.listen(listener,
+                        PhoneStateListener.LISTEN_SERVICE_STATE |
+                        PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+                mListening[phoneId] = true;
             }
         } else {
-            if (mListening) {
-                mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE);
-                mListening = false;
+            if (mListening[phoneId]) {
+                tm.listen(listener, PhoneStateListener.LISTEN_NONE);
+                mListening[phoneId] = false;
             }
         }
     }
@@ -171,9 +188,32 @@ class HeadsetPhoneState {
         }
     }
 
-    private PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
+    private int getActivePhoneId() {
+        if (!TelephonyConstants.IS_DSDS) return 0;
+        return mStateMachine.getActivePhoneId();
+    }
+
+    private PhoneStateListenerDualSIM mPhoneStateListener;
+    private PhoneStateListenerDualSIM mPhoneStateListener2;
+
+    private class PhoneStateListenerDualSIM  extends PhoneStateListener {
+        private int mPhoneId;
+        public PhoneStateListenerDualSIM(int phoneId) {
+            mPhoneId = phoneId;
+        }
+        public int getPhoneId() {
+            return mPhoneId;
+        }
+        private boolean isActivePhone() {
+            return getActivePhoneId() == mPhoneId;
+        }
         @Override
         public void onServiceStateChanged(ServiceState serviceState) {
+            if (!isActivePhone()) {
+                if (DBG) Log.d(TAG, "ignore ServiceStateChanged on phone:" + getPhoneId());
+                return;
+            }
+            if (DBG) Log.d(TAG, "onServiceStateChanged:" + serviceState + ",on phone:" + mPhoneId);
             mServiceState = serviceState;
             mService = (serviceState.getState() == ServiceState.STATE_IN_SERVICE) ?
                 HeadsetHalConstants.NETWORK_STATE_AVAILABLE :
@@ -185,12 +225,17 @@ class HeadsetPhoneState {
 
         @Override
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+            if (!isActivePhone()) {
+                if (DBG) Log.d(TAG, "ignore SignalStrengthsChange on phone:" + getPhoneId());
+                return;
+            }
             int prevSignal = mSignal;
             if (signalStrength.isGsm()) {
                 mSignal = gsmAsuToSignal(signalStrength);
             } else {
                 mSignal = cdmaDbmEcioToSignal(signalStrength);
             }
+            if (DBG) Log.d(TAG, "onSignalStrengthsChanged:" + mSignal + ",on phone:" + mPhoneId);
             // network signal strength is scaled to BT 1-5 levels.
             // This results in a lot of duplicate messages, hence this check
             if (prevSignal != mSignal)
