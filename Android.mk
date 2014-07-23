@@ -1,3 +1,5 @@
+ifneq ($(CONFIG_USE_INTEL_CERT_PROFILE_SUBSYS), true)
+
 ifneq ($(BOARD_USES_WCS),true)
 
 LOCAL_PATH:= $(call my-dir)
@@ -27,3 +29,5 @@ include $(BUILD_PACKAGE)
 include $(call all-makefiles-under,$(LOCAL_PATH))
 
 endif # BOARD_USES_WCS != true
+
+endif
