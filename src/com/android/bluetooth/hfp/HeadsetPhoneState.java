@@ -85,7 +85,8 @@ class HeadsetPhoneState {
     void listenForPhoneState(boolean start) {
         Log.d(TAG, "listenForPhoneState:" + start);
         listenForPhoneState(start, 0);
-        listenForPhoneState(start, 1);
+        if (TelephonyConstants.IS_DSDS)
+            listenForPhoneState(start, 1);
     }
     void listenForPhoneState(boolean start, int phoneId) {
         TelephonyManager tm = phoneId == 0 ? mTelephonyManager : mTelephonyManager2;
