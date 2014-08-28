@@ -63,6 +63,11 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
+
+// INTEL_FEATURE_ASF
+import com.intel.asf.AsfAosp;
+import com.intel.config.FeatureConfig;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -342,6 +347,23 @@ final class HeadsetStateMachine extends StateMachine {
                     broadcastConnectionState(device, BluetoothProfile.STATE_CONNECTING,
                                    BluetoothProfile.STATE_DISCONNECTED);
 
+                    if (FeatureConfig.INTEL_FEATURE_ASF
+                            && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+                        Log.d(TAG, "calling sendBluetoothAccessEvent() " + device );
+                        boolean allowed = AsfAosp.sendBluetoothAccessEvent(
+                                mService.getApplicationContext().getPackageName(),
+                                AsfAosp.BT_OUT, "HFP");
+                        /*
+                         * If result is false, deny access to
+                         * requested application.  If result is true,
+                         * either ASF allowed access to HFP profile or
+                         * ASF Client is not running
+                         */
+                        if (!allowed) {
+                            break;
+                        }
+                    }
+
                     if (!connectHfpNative(getByteAddress(device)) ) {
                         broadcastConnectionState(device, BluetoothProfile.STATE_DISCONNECTED,
                                        BluetoothProfile.STATE_CONNECTING);
@@ -555,6 +577,22 @@ final class HeadsetStateMachine extends StateMachine {
                         processWBSEvent(0, device); /* disable WBS audio parameters */
 
                         if (mTargetDevice != null) {
+                            if (FeatureConfig.INTEL_FEATURE_ASF
+                                        && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+                                Log.d(TAG, "calling sendBluetoothAccessEvent() " + mTargetDevice);
+                                boolean allowed = AsfAosp.sendBluetoothAccessEvent(
+                                        mService.getApplicationContext().getPackageName(),
+                                        AsfAosp.BT_OUT, "HFP");
+                                /* If result is false, deny access
+                                 * to requested application.  If
+                                 * result is true, either ASF
+                                 * allowed access to HFP profile
+                                 * or ASF Client is not running
+                                 */
+                                if (!allowed) {
+                                    break;
+                                }
+                            }
                             if (!connectHfpNative(getByteAddress(mTargetDevice))) {
                                 broadcastConnectionState(mTargetDevice,
                                                          BluetoothProfile.STATE_DISCONNECTED,

@@ -43,6 +43,10 @@ import android.util.Log;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.Utils;
 
+// INTEL_FEATURE_ASF
+import com.intel.asf.AsfAosp;
+import com.intel.config.FeatureConfig;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -405,6 +409,30 @@ public class PanService extends ProfileService {
         if (prevState == BluetoothProfile.STATE_DISCONNECTED && state == BluetoothProfile.STATE_DISCONNECTING) {
             Log.d(TAG, "Ignoring state change from " + prevState + " to " + state);
             return;
+        }
+
+        if (FeatureConfig.INTEL_FEATURE_ASF
+                && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
+            if ((prevState == BluetoothProfile.STATE_DISCONNECTED
+                    || prevState == BluetoothProfile.STATE_CONNECTING)
+                            && state == BluetoothProfile.STATE_CONNECTED ) {
+                if (DBG) {
+                    Log.d(TAG, "calling sendBluetoothAccessEvent() in PanService ");
+                }
+                boolean result =
+                    AsfAosp.sendBluetoothAccessEvent(getApplicationContext().getPackageName(),
+                            AsfAosp.BT_OUT, "PAN");
+                /* If result is false, deny access to requested application.
+                 * If result is true, either ASF allowed access to Opp profile
+                 * or if ASF Client is not running.
+                 */
+                if (DBG) {
+                    Log.d(TAG, "sendBluetoothAccessEvent() returned " + result);
+                }
+                if (!result) {
+                    return;
+                }
+            }
         }
 
         Log.d(TAG, "handlePanDeviceStateChange preState: " + prevState + " state: " + state);
