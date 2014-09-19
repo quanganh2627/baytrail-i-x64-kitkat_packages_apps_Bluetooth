@@ -1,4 +1,4 @@
-ifneq ($(CONFIG_USE_INTEL_CERT_PROFILE_SUBSYS), true)
+ifneq ($(CONFIG_USE_INTEL_CERT_BINARIES),true)
 
 ifneq ($(BOARD_USES_WCS),true)
 
@@ -30,4 +30,4 @@ include $(call all-makefiles-under,$(LOCAL_PATH))
 
 endif # BOARD_USES_WCS != true
 
-endif
+endif # CONFIG_USE_INTEL_CERT_BINARIES
