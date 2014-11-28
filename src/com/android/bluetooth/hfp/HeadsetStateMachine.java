@@ -169,10 +169,6 @@ final class HeadsetStateMachine extends StateMachine {
     private static final int CODEC_MSBC = 1;
     private static final String HEADSET_RATE = "bthf_rate=";
 
-    // Codec definition
-    private static final int CODEC_CVSD = 0;
-    private static final int CODEC_MSBC = 1;
-    private static final String HEADSET_RATE = "bthf_rate=";
     static {
         classInitNative();
 
@@ -813,15 +809,6 @@ final class HeadsetStateMachine extends StateMachine {
                     Log.e(TAG, "Audio State Device: " + device + " bad state: " + state);
                     break;
             }
-        }
-
-        /**
-         * Notify audio system current codec negotiated with handsfree
-         */
-        private void sendCodecParameter(int codec) {
-            String parameter = HEADSET_RATE + (codec == CODEC_CVSD? "8khz" : "16khz");
-            log("Codec parameter after adding =: " + parameter);
-            mAudioManager.setParameters(parameter);
         }
 
         /**
