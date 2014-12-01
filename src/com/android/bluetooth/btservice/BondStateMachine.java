@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2012-2013 Intel Mobile Communications GmbH
+ *
  * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -182,7 +184,11 @@ final class BondStateMachine extends StateMachine {
                             // the device to the list again. This prevents us
                             // from pairing with a device that we just unpaired
                             result = false;
-                            transitionTo(mStableState);
+                            /* We dont need to transit back to mStablestate.
+                               As we can do all the activities of mStablestate here. i
+                               Even if we move, we will back to mPendingstate
+                               This is used in simultaneous Unparing and Pairing scenario*/
+                            //transitionTo(mStableState);
                         }
                         if (newState == BluetoothDevice.BOND_NONE)
                         {
