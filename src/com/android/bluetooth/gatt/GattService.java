@@ -547,6 +547,13 @@ public class GattService extends ProfileService {
             if (service == null) return;
             service.stopMultiAdvertising(new AdvertiseClient(clientIf));
         }
+
+        public int getServiceHandle(int srvcType, int srvcInstanceId,
+                ParcelUuid srvcId) {
+            GattService service = getService();
+            if (service == null) return 0;
+            return service.getServiceHandle(srvcType, srvcInstanceId, srvcId.getUuid());
+        }
     };
 
     /**************************************************************************
@@ -1999,6 +2006,11 @@ public class GattService extends ProfileService {
         }
     }
 
+    int getServiceHandle(int srvcType, int srvcInstanceId, UUID srvcUuid) {
+        enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+
+        return mHandleMap.getServiceHandle(srvcUuid, srvcType, srvcInstanceId);
+    }
 
     /**************************************************************************
      * Private functions
