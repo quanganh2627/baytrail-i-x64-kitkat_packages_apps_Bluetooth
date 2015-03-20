@@ -48,10 +48,6 @@ import android.os.PowerManager.WakeLock;
 import android.os.Process;
 import android.util.Log;
 
-// INTEL_FEATURE_ASF
-import com.intel.asf.AsfAosp;
-import com.intel.config.FeatureConfig;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -373,19 +369,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                 }
                 synchronized (this) {
                     mWaitingForRemote = false;
-                }
-                if (FeatureConfig.INTEL_FEATURE_ASF
-                        && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-                    boolean result =
-                            AsfAosp.sendBluetoothAccessEvent(mContext.getPackageName(),
-                            mInfo.mDirection, fileInfo.mMimetype);
-                    /* If result is false, deny access to requested application.
-                     * If result is true, either ASF allowed access to Opp profile
-                     * or if ASF client is not running.
-                     */
-                    if (!result) {
-                        error = true;
-                    }
                 }
 
                 if (!error) {

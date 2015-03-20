@@ -53,11 +53,6 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.util.IState;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
-
-// INTEL_FEATURE_ASF
-import com.intel.asf.AsfAosp;
-import com.intel.config.FeatureConfig;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -560,22 +555,6 @@ final class A2dpStateMachine extends StateMachine {
             }
             switch (state) {
                 case AUDIO_STATE_STARTED:
-                    if (FeatureConfig.INTEL_FEATURE_ASF
-                            && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-                        logd("In processAudioStateEvent() AUDIO_STATE_STARTED call " + device);
-                        boolean result =
-                                AsfAosp.sendBluetoothAccessEvent(mContext.getPackageName(),
-                                                                 AsfAosp.BT_OUT, "A2DP");
-                        // If result is false, deny access to requested
-                        // application.  If result is true, either ASF
-                        // allowed access to Opp profile or if ASF Client
-                        // is not running
-                        if (!result) {
-                            logd("ASF client app denied hence calling clean up");
-                            disconnectA2dpNative(getByteAddress(mCurrentDevice));
-                            break;
-                        }
-                    }
                     if (mPlayingA2dpDevice == null) {
                         mPlayingA2dpDevice = device;
                         mService.setAvrcpAudioState(BluetoothA2dp.STATE_PLAYING);

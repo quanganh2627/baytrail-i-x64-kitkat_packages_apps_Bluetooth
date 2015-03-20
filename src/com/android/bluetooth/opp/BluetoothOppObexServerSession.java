@@ -49,10 +49,6 @@ import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-// INTEL_FEATURE_ASF
-import com.intel.asf.AsfAosp;
-import com.intel.config.FeatureConfig;
-
 import javax.obex.HeaderSet;
 import javax.obex.ObexTransport;
 import javax.obex.Operation;
@@ -453,24 +449,6 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler implemen
             ContentValues updateValues = new ContentValues();
             updateValues.put(BluetoothShare._DATA, fileInfo.mFileName);
             mContext.getContentResolver().update(contentUri, updateValues, null, null);
-        }
-
-        if (FeatureConfig.INTEL_FEATURE_ASF
-                && AsfAosp.PLATFORM_ASF_VERSION >= AsfAosp.ASF_VERSION_2) {
-            if (D) {
-                Log.d(TAG, "sendBluetoothAccessEvent() with " + mInfo.mDirection + mInfo.mMimetype);
-            }
-            boolean result =
-                    AsfAosp.sendBluetoothAccessEvent(mContext.getPackageName(), mInfo.mDirection,
-                            mInfo.mMimetype);
-            /* If result is false, deny access to requested
-             * application. If result is true, either ASF allowed
-             * access to Opp profile or if ASF Client is not running.
-             */
-            if (!result) {
-                Log.e(TAG, "result is 0, ASF client denied permission");
-                error = true;
-            }
         }
 
         int position = 0;

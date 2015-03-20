@@ -24,8 +24,6 @@ LOCAL_JNI_SHARED_LIBRARIES := libbluetooth_jni
 LOCAL_JAVA_LIBRARIES := javax.obex telephony-common bluetooth.mapsapi
 LOCAL_STATIC_JAVA_LIBRARIES := com.android.vcard
 
-LOCAL_JAVA_LIBRARIES += com.intel.asf com.intel.config
-
 LOCAL_REQUIRED_MODULES := bluetooth.default
 LOCAL_MULTILIB := 32
 
