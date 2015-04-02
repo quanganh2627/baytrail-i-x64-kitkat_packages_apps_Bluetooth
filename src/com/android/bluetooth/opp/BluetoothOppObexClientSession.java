@@ -393,6 +393,8 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                 if (!error) {
                     int position = 0;
                     int readLength = 0;
+                    long percent = 0;
+                    long prevPercent = 0;
                     boolean okToProceed = false;
                     long timestamp = 0;
                     int outputBufferSize = putOperation.getMaxPacketSize();
@@ -465,10 +467,15 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                                             + " readLength " + readLength + " bytes took "
                                             + (System.currentTimeMillis() - timestamp) + " ms");
                                 }
-                                updateValues = new ContentValues();
-                                updateValues.put(BluetoothShare.CURRENT_BYTES, position);
-                                mContext1.getContentResolver().update(contentUri, updateValues,
-                                        null, null);
+                                // Update the Progress Bar only if there is change in percentage
+                                percent = position * 100 / fileInfo.mLength;
+                                if (percent > prevPercent) {
+                                    updateValues = new ContentValues();
+                                    updateValues.put(BluetoothShare.CURRENT_BYTES, position);
+                                    mContext1.getContentResolver().update(contentUri, updateValues,
+                                            null, null);
+                                    prevPercent = percent;
+                                }
                             }
                         }
                     }
